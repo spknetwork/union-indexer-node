@@ -2,14 +2,14 @@ import { Client } from '@hiveio/dhive'
 import { pushable } from 'it-pushable'
 import EventEmitter from 'events'
 import PQueue from 'p-queue'
-const queue = new PQueue({ concurrency: 100 })
+const queue = new PQueue({ concurrency: 15 })
 let opts = {} as any
 
 //connect to production server
 opts.addressPrefix = 'STM'
 opts.chainId = 'beeab0de00000000000000000000000000000000000000000000000000000000'
 
-const client = new Client(["https://api.deathwing.me", "https://hived.emre.sh", "https://rpc.ausbit.dev", "https://api.hive.blog", "https://techcoderx.com", "https://hive-api.3speak.tv"])
+const client = new Client("https://api.deathwing.me")
 
 export function fastStream(startBlock: number) {
   let setSize = 20
@@ -88,6 +88,7 @@ export function fastStream(startBlock: number) {
               if (activeLength === 0) {
                 //events.emit('end')
               }
+              stream.removeAllListeners()
               return resolve(null)
             })
         })
