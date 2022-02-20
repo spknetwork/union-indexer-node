@@ -23,7 +23,13 @@ const func = (async () => {
   const hiveState = await hiveStreamState.findOne({
     id: 'block_height',
   })
-  let blockHeight = 1;
+
+  let headBlock = (await blocks.findOne({}, {
+    sort: {
+      block_height: -1
+    }
+  }))
+  let blockHeight = headBlock ? headBlock.block_height : 1;
  /* if (!hiveState) {
     blockHeight = 1
   } else {
@@ -40,13 +46,17 @@ const func = (async () => {
   setInterval(() => {
     console.log(`latest block: ${currentBlock}; ${timestamp}`)
   }, 1000)
+  setTimeout(() => {
+    process.exit(0)
+  }, 1800 * 1000); // Stop in 1800 seconds aka 30 minutes
+
   events
     .on('block', async function (block_height, block) {
-        console.log(block_height, block)
         block.block_height = block_height;
         timestamp = block.timestamp
-        
+
         await blocks.insertOne(block)
+        
     })
     .on('end', function () {
       // done
