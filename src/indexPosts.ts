@@ -95,6 +95,7 @@ const func = async () => {
                   $set: {
                     ...op[1],
                     tags,
+                    updated_at: new Date(block.timestamp)
                   },
                 })
               }
@@ -108,6 +109,8 @@ const func = async () => {
                     block_height: block.block_height,
                   },
                   tags,
+                  created_at: new Date(block.timestamp),
+                  updated_at: new Date(block.timestamp)
                 })
               } catch (ex) {
                 console.log(ex)
