@@ -55,7 +55,28 @@ const func = (async () => {
         block.block_height = block_height;
         timestamp = block.timestamp
 
-        await blocks.insertOne(block)
+        for (let trx of block.transactions) {
+          for (let op of trx.operations) {
+            if (op[0] === 'comment') {
+              let json_metadata
+              try {
+                json_metadata = JSON.parse(op[1].json_metadata)
+              } catch {
+                json_metadata = op[1].json_metadata
+              }
+              const typye = detectPostType({
+                ...op[1],
+                json_metadata,
+              })
+              console.log(typye)
+  
+              posts.insertOne({
+                ...op[1],
+                json_metadata,
+              })
+            }
+          }
+        }
         
     })
     .on('end', function () {

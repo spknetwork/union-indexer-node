@@ -1,7 +1,7 @@
 import { Client } from '@hiveio/dhive'
 import { MongoClient } from 'mongodb'
 import { fastStream } from './fastStreaming'
-import { detectPostType } from './services/block_processing/posts'
+import { ALLOWED_APPS, detectPostType } from './services/block_processing/posts'
 
 let opts = {} as any
 
@@ -10,11 +10,12 @@ opts.addressPrefix = 'STM'
 opts.chainId = 'beeab0de00000000000000000000000000000000000000000000000000000000'
 
 //connect to server which is connected to the network/production
-const func = (async () => {
+const func = async () => {
   const dbClient = new MongoClient('mongodb://127.0.0.1:27017')
   await dbClient.connect()
   const db = dbClient.db('spk-union-indexer')
   const posts = db.collection('posts')
+  const blocks = db.collection('blocks')
   const hiveStreamState = db.collection('hive_stream_state')
 
   const client = new Client('https://api.deathwing.me')
@@ -22,7 +23,8 @@ const func = (async () => {
   const hiveState = await hiveStreamState.findOne({
     id: 'block_height',
   })
-  let blockHeight = 30868969
+
+  let blockHeight
   if (!hiveState) {
     blockHeight = 1
   } else {
@@ -31,23 +33,38 @@ const func = (async () => {
   const { events, startStream } = fastStream(blockHeight)
 
   //await posts.deleteMany({})
+  /*await blocks.createIndex({
+    block_id: -1
+  })*/
   let currentBlock = blockHeight
   let timestamp
   setInterval(() => {
     console.log(`latest block: ${currentBlock}; ${timestamp}`)
   }, 1000)
+  setTimeout(() => {
+    process.exit(0)
+  }, 1800 * 1000) // Stop in 1800 seconds aka 30 minutes
+
   events
     .on('block', async function (block_height, block) {
-      const block_height2 = parseInt(block.block_id.slice(0, 8), 16)
-      //console.log(`Start processing block: ${block.block_id}; ${currentBlock}/${block_height2} ${block.timestamp}`)
+      block.block_height = block_height
       timestamp = block.timestamp
 
+      await hiveStreamState.findOneAndUpdate({
+        id: 'block_height'
+      }, {
+        $set: {
+            block_height: block.block_height
+        }
+    })
       for (let trx of block.transactions) {
         for (let op of trx.operations) {
           if (op[0] === 'comment') {
             let json_metadata
+            let tags
             try {
               json_metadata = JSON.parse(op[1].json_metadata)
+              tags = json_metadata.tags
             } catch {
               json_metadata = op[1].json_metadata
             }
@@ -57,47 +74,63 @@ const func = (async () => {
             })
             console.log(typye)
 
-            posts.insertOne({
-              ...op[1],
-              json_metadata,
+
+            console.log(typye.type)
+            console.log(ALLOWED_APPS.includes(typye.type))
+            if(!ALLOWED_APPS.includes(typye.type)) {
+                continue
+            }
+
+            const { parent_author, parent_permlink, author, permlink } = op[1]
+            const alreadyExisting = await posts.findOne({
+              parent_author,
+              parent_permlink,
+              author,
+              permlink,
             })
+            if (alreadyExisting) {
+              //Ensure state can ONLY go foward
+              if (alreadyExisting.state_control.updated_block < block.block_height) {
+                await posts.findOneAndUpdate(alreadyExisting, {
+                  $set: {
+                    ...op[1],
+                    tags,
+                  },
+                })
+              }
+            } else {
+              //If post does not exist
+              try {
+                await posts.insertOne({
+                  ...op[1],
+                  json_metadata,
+                  state_control: {
+                    block_height: block.block_height,
+                  },
+                  tags,
+                })
+              } catch (ex) {
+                console.log(ex)
+              }
+            }
           }
         }
       }
-
-      if (block.transactions[0]) {
-        currentBlock = block.transactions[0].block_num
-      } else {
-        currentBlock = currentBlock + 1
-      }
-      await hiveStreamState.findOneAndUpdate(
-        {
-          id: 'block_height',
-        },
-        {
-          $set: {
-            block_height: currentBlock || 1,
-          },
-        },
-        {
-          upsert: true,
-        },
-      )
+      
     })
     .on('end', function () {
       // done
       console.log('END')
     })
   await startStream()
-})
+}
 void (async () => {
-    try {
-        await func();
-    } catch (ex) {
-        console.log("ERROR CAUGHT!")
-        console.log(ex)
-    }
-
+  try {
+    await func()
+  } catch (ex) {
+    console.log('ERROR CAUGHT!')
+    console.log(ex)
+  }
 })()
 let tries = 0
 /*process.on('unhandledRejection', (error: Error) => {

@@ -1,5 +1,5 @@
 export const Schema = `
-    type Post {
+    type HivePost {
         parent_author: String
         parent_permlink: String
 
@@ -8,6 +8,9 @@ export const Schema = `
 
         title: String
         body: String
+        tags: [String]
+
+        json_metadata: String
     }
     type Query {
         hello: String

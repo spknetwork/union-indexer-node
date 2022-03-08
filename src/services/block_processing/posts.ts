@@ -10,6 +10,12 @@ export function detectPostType(post) {
             type = "3speak"
             console.log(`Found! ${post.json_metadata.app}`)
         }
+        if(app === "dBuzz") {
+            type = "dbuzz"
+        }
+        if(app === "steemit") {
+            type = "steemit"
+        }
     }
     if(!type) {
         type = "unknown"
@@ -22,3 +28,5 @@ export function detectPostType(post) {
 export function normalizePost(post) {
     
 }
+
+export const ALLOWED_APPS = ['3speak', 'dbuzz']
