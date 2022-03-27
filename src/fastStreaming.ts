@@ -14,7 +14,8 @@ const client = new Client("https://api.deathwing.me")
 export function fastStream(startBlock: number) {
   let setSize = 20
   //let startBlock = 42837;
-  let endSet = 61767491 - startBlock
+  //Use 30874325 in the state store (database) to parse from the beginning of 3speak
+  let endSet = 62993327 - startBlock
 
   const numbSets = endSet % setSize
 
