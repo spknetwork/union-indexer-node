@@ -77,11 +77,25 @@ const func = async () => {
 
             console.log(typye.type)
             console.log(ALLOWED_APPS.includes(typye.type))
-            if(!ALLOWED_APPS.includes(typye.type)) {
-                continue
+            const { parent_author, parent_permlink, author, permlink } = op[1]
+
+            //Parses posts that belong to a parent of interesting content. 
+            let allowed_by_parent = false
+            if(parent_permlink !== '') {
+              const parentPost = await this.posts.findOne({
+                author: parent_author,
+                permlink: parent_permlink,
+              })
+              if(parentPost) {
+                allowed_by_parent = true;
+              }
+            }
+            //If parent then do not continue
+            if(!ALLOWED_APPS.includes(typye.type) && !allowed_by_parent) {
+              continue
             }
 
-            const { parent_author, parent_permlink, author, permlink } = op[1]
+            
             const alreadyExisting = await posts.findOne({
               parent_author,
               parent_permlink,
