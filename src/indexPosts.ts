@@ -82,7 +82,7 @@ const func = async () => {
             //Parses posts that belong to a parent of interesting content. 
             let allowed_by_parent = false
             if(parent_permlink !== '') {
-              const parentPost = await this.posts.findOne({
+              const parentPost = await posts.findOne({
                 author: parent_author,
                 permlink: parent_permlink,
               })
