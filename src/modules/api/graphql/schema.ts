@@ -1,5 +1,5 @@
 export const Schema = `
-
+    scalar JSON;
     type ProfileImages {
         avatar: String
         background: String
@@ -74,6 +74,6 @@ export const Schema = `
     type Query {
         hello: String
         blog: [HivePost]
-        publicFeed(parent_permlink: String): [HivePost]
+        publicFeed(parent_permlink: String, permlink: String, author: String): [HivePost]
     }
 `

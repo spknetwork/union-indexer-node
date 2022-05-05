@@ -45,8 +45,6 @@ export class IndexerApiModule {
 
     app.enableShutdownHooks()
 
-    
-
     await app.listen(this.listenPort)
   }
 }

@@ -1,3 +1,4 @@
+import GraphQLJSON from 'graphql-type-json'
 import { indexerContainer } from ".."
 
 export class Post {
@@ -71,6 +72,7 @@ export class Post {
 }
 
 export const Resolvers = {
+    JSON: GraphQLJSON,
     async publicFeed (args: any) {
         const mongodbQuery = {};
         if(args.parent_permlink) {
@@ -80,7 +82,7 @@ export const Resolvers = {
             mongodbQuery['author'] = args.author
         }
         if(args.permlink) {
-            mongodbQuery['permlink'] = args.author
+            mongodbQuery['permlink'] = args.permlink
         }
         return (await indexerContainer.self.posts.find(mongodbQuery, {
             limit: args.limit || 100,

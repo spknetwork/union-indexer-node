@@ -8,7 +8,6 @@ export function detectPostType(post) {
         const [app, version] = post.json_metadata.app.split('/')
         if(app === "3speak") {
             type = "3speak"
-            console.log(`Found! ${post.json_metadata.app}`)
         }
         if(app === "dBuzz") {
             type = "dbuzz"
