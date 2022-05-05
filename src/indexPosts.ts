@@ -109,7 +109,8 @@ const func = async () => {
                   $set: {
                     ...op[1],
                     tags,
-                    updated_at: new Date(block.timestamp)
+                    updated_at: new Date(block.timestamp),
+                    TYPE: 'HIVE'
                   },
                 })
               }
@@ -124,7 +125,8 @@ const func = async () => {
                   },
                   tags,
                   created_at: new Date(block.timestamp),
-                  updated_at: new Date(block.timestamp)
+                  updated_at: new Date(block.timestamp),
+                  TYPE: 'HIVE'
                 })
               } catch (ex) {
                 console.log(ex)
