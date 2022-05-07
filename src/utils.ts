@@ -7,7 +7,7 @@ const client = new Client(process.env.HIVE_HOST || 'https://api.deathwing.me')
 
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
-    const queue = new PQueue({ concurrency: 100 })
+    const queue = new PQueue({ concurrency: 50 })
     if(!streamOpts.endBlock) {
         const currentBlock = await client.blockchain.getCurrentBlock()
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
@@ -70,10 +70,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
           mode: BlockchainMode.Latest
         }
         currentBlock = currentBlock + setSize
-    
-        if(streamOptsInput.from > streamOpts.endBlock) {
-            console.log("CODE 6")
-        }
+
         finalBlock = streamOptsInput.to;
         queue.add(() => {
           const stream = client.blockchain.getBlockStream(streamOptsInput)
@@ -98,6 +95,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
                 if (activeLength === 0) {
                   //events.emit('end')
                 }
+                ;(stream as any).end();
                 stream.removeAllListeners()
                 return resolve(null)
               })
