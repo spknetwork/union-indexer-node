@@ -53,6 +53,11 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
         events.emit('block', block_height, blockMap[block_height])
         delete blockMap[block_height]
       }
+      for(let key of Object.keys(blockMap)) {
+        if(Number(key) < parser_height) {
+          delete blockMap[key]; //Memory safety
+        }
+      }
     }, 1)
   
     const startStream = async () => {
