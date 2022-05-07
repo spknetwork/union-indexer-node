@@ -43,6 +43,7 @@ services:
   ipfs:
     container_name: ipfs
     image: ipfs/go-ipfs:latest
+    entrypoint: ["echo", "Service IPFS disabled"]
     command:
       - daemon
       - --enable-pubsub-experiment
