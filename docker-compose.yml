@@ -38,6 +38,8 @@ services:
       - 27027:27017
     networks:
       - union-indexer-network
+    volumes:
+      - ./data/mongodb:/data/db
   ipfs:
     container_name: ipfs
     image: ipfs/go-ipfs:latest
