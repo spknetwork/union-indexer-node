@@ -1,5 +1,5 @@
 export const Schema = `
-    scalar JSON;
+    scalar JSON
     type ProfileImages {
         avatar: String
         background: String
@@ -62,8 +62,8 @@ export const Schema = `
         post_type: String
         app: String
 
-        json_metadata: String
-        app_metadata: String
+        json_metadata: JSON
+        app_metadata: JSON
         community_ref: String
 
         children: [HivePost]

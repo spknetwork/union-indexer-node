@@ -3,7 +3,6 @@ export function detectPostType(post) {
     if(typeof post.json_metadata === "string") {
         type = "unknown"
     }
-    console.log(post.json_metadata.app)
     if(typeof post.json_metadata.app === "string") {
         const [app, version] = post.json_metadata.app.split('/')
         if(app === "3speak") {

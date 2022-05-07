@@ -1,0 +1,51 @@
+version: "3.3"
+
+services:
+  union-indexer-node: # name of the service
+    build: .
+    image: union-indexer-node # the image to use
+    container_name: union-indexer-node # what to label the container for docker ps
+    ports:
+      - 4568:4568
+    restart: always # restart if failed, until we stop it ourselves
+    links:
+      - mongo
+    depends_on:
+      - mongo
+      - ipfs
+    networks:
+      - union-indexer-network
+    environment:
+      MONGO_HOST: mongo:27017
+      IPFS_HOST: ipfs:5001
+      ENABLE_CORS: "true"
+      SPK_INDEXER_HOST: "https://us-01.infra.3speak.tv"
+  union-indexer_hive:
+    image: union-indexer-node
+    restart: always
+    depends_on:
+      - union-indexer-node
+    networks:
+      - union-indexer-network
+    command: npm run start-worker:hive-events
+    environment:
+      MONGO_HOST: mongo:27017
+      HIVE_HOST: "https://api.deathwing.me"
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+    ports:
+      - 27027:27017
+    networks:
+      - union-indexer-network
+  ipfs:
+    container_name: ipfs
+    image: ipfs/go-ipfs:latest
+    command:
+      - daemon
+      - --enable-pubsub-experiment
+    networks:
+      - union-indexer-network
+networks:
+  union-indexer-network:
+    driver: bridge

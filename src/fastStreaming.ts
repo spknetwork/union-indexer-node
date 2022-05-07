@@ -1,5 +1,5 @@
 import { Client } from '@hiveio/dhive'
-import { pushable } from 'it-pushable'
+import pushable from 'it-pushable'
 import EventEmitter from 'events'
 import PQueue from 'p-queue'
 const queue = new PQueue({ concurrency: 15 })
