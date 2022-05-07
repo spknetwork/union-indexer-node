@@ -30,7 +30,7 @@ const func = async () => {
   } else {
     blockHeight = hiveState.block_height
   }
-  const { events, startStream } = fastStream(blockHeight)
+  const { events, startStream } = await fastStream(blockHeight)
 
   //await posts.deleteMany({})
   /*await blocks.createIndex({

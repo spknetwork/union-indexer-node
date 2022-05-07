@@ -28,6 +28,7 @@ void (async () => {
       nowTime: new Date().toISOString(),
       totalTime: totalTime,
       'blocks/s': Number(((block_height_current - startBlock) / totalTime).toFixed()),
+      heapUsed: process.memoryUsage().heapUsed
     })
     await stats.findOneAndUpdate({
         key: "stats"

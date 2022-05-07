@@ -1,8 +1,8 @@
 import { Client } from '@hiveio/dhive'
 import pushable from 'it-pushable'
 import EventEmitter from 'events'
-import PQueue from 'p-queue'
-const queue = new PQueue({ concurrency: 15 })
+
+
 let opts = {} as any
 
 //connect to production server
@@ -11,7 +11,9 @@ opts.chainId = 'beeab0de00000000000000000000000000000000000000000000000000000000
 
 const client = new Client("https://api.deathwing.me")
 
-export function fastStream(startBlock: number) {
+export async function fastStream(startBlock: number) {
+  const PQueue = (await import('p-queue')).default
+  const queue = new PQueue({ concurrency: 15 })
   let setSize = 20
   //let startBlock = 42837;
   //Use 30874325 in the state store (database) to parse from the beginning of 3speak

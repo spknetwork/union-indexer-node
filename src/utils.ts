@@ -1,13 +1,13 @@
 import EventEmitter from 'events'
-import PQueue from 'p-queue'
+//import PQueue from 'p-queue'
 import { BlockchainMode, BlockchainStreamOptions, Client } from '@hiveio/dhive'
 import Pushable from 'it-pushable'
-console.log(Pushable)
-const queue = new PQueue({ concurrency: 100 })
 
 const client = new Client(process.env.HIVE_HOST || 'https://api.deathwing.me')
 
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
+    const PQueue = (await import('p-queue')).default
+    const queue = new PQueue({ concurrency: 100 })
     if(!streamOpts.endBlock) {
         const currentBlock = await client.blockchain.getCurrentBlock()
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
@@ -23,17 +23,12 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
     console.log(numbSets)
     console.log(Math.floor(endSet / setSize))*/
   
-    let processedBlocks = 0
   
     let currentBlock = streamOpts.startBlock || 1
     const events = new EventEmitter()
     const streamOut = Pushable()
   
     let parser_height = streamOpts.startBlock || 0
-  
-    events.on('block', (height) => {
-      processedBlocks = processedBlocks + 1
-    })
   
 
     const blockMap = {}
@@ -103,9 +98,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
               })
           })
         })
-        if(queue.size > 1250) {
-          await queue.onEmpty()
-        }
+        await queue.onSizeLessThan(1250)
       }
       await queue.onIdle();
       console.log("ITS IDLE")
@@ -127,7 +120,6 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
           .on('error', (error) => {
             clearInterval(eventQueue)
             streamOut.end(error)
-
           })
           .on('end', function () {
             // done
