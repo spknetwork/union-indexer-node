@@ -30,6 +30,9 @@ void (async () => {
       'blocks/s': Number(((block_height_current - startBlock) / totalTime).toFixed()),
       heapUsed: process.memoryUsage().heapUsed
     })
+    if(process.memoryUsage().heapUsed > 500000 * 1000) {
+      process.exit(0)
+    }
     await stats.findOneAndUpdate({
         key: "stats"
     }, {
