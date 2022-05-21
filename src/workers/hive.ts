@@ -100,7 +100,7 @@ void (async () => {
             })
             if (alreadyExisting) {
               //Ensure state can ONLY go foward
-              if (alreadyExisting.state_control.updated_block < block_height) {
+              if (alreadyExisting.state_control.block_height < block_height) {
                 await posts.findOneAndUpdate(alreadyExisting, {
                   $set: {
                     ...op[1],
