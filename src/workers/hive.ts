@@ -104,6 +104,8 @@ void (async () => {
                 await posts.findOneAndUpdate(alreadyExisting, {
                   $set: {
                     ...op[1],
+                    json_metadata,
+                    "state_control.block_height": block_height,
                     tags,
                     updated_at: new Date(block.timestamp),
                     TYPE: 'HIVE',
