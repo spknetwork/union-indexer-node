@@ -20,10 +20,30 @@ export class CoreService {
         this.posts = this.db.collection('posts')
         this.streamState = this.db.collection('stream_state')
 
-        await this.streamState.createIndex({
-            key: 1
-        }, {
-            unique: true
-        })
+        try {
+            await this.streamState.createIndex({
+                key: 1
+            }, {
+                unique: true
+            })
+        } catch {
+
+        }
+        
+        try  {
+            await this.posts.createIndex({
+                author: 1,
+                permlink: 1
+            })
+        } catch {
+
+        }
+        try  {
+            await this.posts.createIndex({
+                parent_permlink: 1
+            })
+        } catch {
+
+        }
     }
 }

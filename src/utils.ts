@@ -3,13 +3,13 @@ import EventEmitter from 'events'
 import { BlockchainMode, BlockchainStreamOptions, Client } from '@hiveio/dhive'
 import Pushable from 'it-pushable'
 
-const client = new Client(process.env.HIVE_HOST || 'https://api.deathwing.me')
+export const HiveClient = new Client(process.env.HIVE_HOST || 'https://api.deathwing.me')
 
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
     const queue = new PQueue({ concurrency: 50 })
     if(!streamOpts.endBlock) {
-        const currentBlock = await client.blockchain.getCurrentBlock()
+        const currentBlock = await HiveClient.blockchain.getCurrentBlock()
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
         streamOpts.endBlock = block_height;
     }
@@ -73,7 +73,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
 
         finalBlock = streamOptsInput.to;
         queue.add(() => {
-          const stream = client.blockchain.getBlockStream(streamOptsInput)
+          const stream = HiveClient.blockchain.getBlockStream(streamOptsInput)
           return new Promise((resolve) => {
             stream
               .on('data', async function (block) {
@@ -105,7 +105,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
       }
       await queue.onIdle();
       console.log("ITS IDLE")
-      const finalStream = client.blockchain.getBlockStream({
+      const finalStream = HiveClient.blockchain.getBlockStream({
           from: finalBlock,
           mode: BlockchainMode.Latest
       })

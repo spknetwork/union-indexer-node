@@ -78,6 +78,7 @@ void (async () => {
 
             //Parses posts that belong to a parent of interesting content.
             let allowed_by_parent = false
+            let allowed_by_type = ALLOWED_APPS.includes(typye.type);
             if (parent_permlink !== '') {
               const parentPost = await posts.findOne({
                 author: parent_author,
@@ -101,6 +102,7 @@ void (async () => {
             if (alreadyExisting) {
               //Ensure state can ONLY go foward
               if (alreadyExisting.state_control.block_height < block_height) {
+                //TODO: more safety on updating already existing records. Cleanse fields
                 await posts.findOneAndUpdate(alreadyExisting, {
                   $set: {
                     ...op[1],
@@ -116,11 +118,16 @@ void (async () => {
             } else {
               //If post does not exist
               try {
+                //TODO: more safety on updating already existing records. Cleanse fields
                 await posts.insertOne({
                   ...op[1],
                   json_metadata,
                   state_control: {
                     block_height: block_height,
+                  },
+                  origin_control: {
+                    allowed_by_parent,
+                    allowed_by_type
                   },
                   tags,
                   created_at: new Date(block.timestamp),
