@@ -39,41 +39,92 @@ export const Schema = `
 
         src: String
     } 
-    
-    type HivePost {
-        parent_author: String
-        parent_permlink: String
 
-        permlink: String
+    union MergedProfile = HiveProfile | CeramicProfile
 
+
+    type Notification {
+        target: String
+        type: String
+        mentioned_at: String
+        ref: String
+        
+        post: JSON
+    }
+
+    type PostStats {
+        num_comments: Int
+        num_votes: Int
+        total_hive_reward: Float
+    }
+
+    type CeramicPost {
         stream_id: String
         version_id: String
         parent_id: String
 
         title: String
         body: String
-        category: String
-        
-        refs: [String]
-        tags: [String]
-        image: [String]
-        lang: String
-
-        post_type: String
-        app: String
 
         json_metadata: JSON
         app_metadata: JSON
-        community_ref: String
+        debug_metadata: JSON
 
-        children: [HivePost]
         author: CeramicProfile
-
-        data_type: String
     }
+    
+    type HivePost {
+        parent_author: String
+        parent_permlink: String
+
+        permlink: String
+        
+        author: String
+        author_profile: HiveProfile
+
+        title: String
+        body: String
+        
+        tags: [String]
+        image: [String]
+        
+        app: String
+        
+        json_metadata: JSON
+        
+        community_ref: String
+        
+        children: [HivePost]
+
+        created_at: String
+        updated_at: String
+
+        three_video: JSON
+
+        # Non-essential / arbitrary / TBD
+        lang: String
+        app_metadata: JSON
+        post_type: String
+
+
+        # Special: Linkage between Off-chain and On-chain mirrors
+        refs: [String]
+        community: JSON
+        parent_post: HivePost
+        stats: PostStats
+    }
+
+    union MergedPost = HivePost | CeramicPost
+
+    type FeedOutput {
+        items: [MergedPost]
+    }
+
     type Query {
         hello: String
         blog: [HivePost]
-        publicFeed(parent_permlink: String, permlink: String, author: String): [HivePost]
+        publicFeed(parent_permlink: String, permlink: String, author: String, limit: Int, skip: Int): FeedOutput
+        latestFeed(parent_permlink: String, permlink: String, author: String, limit: Int, skip: Int): FeedOutput
+        profile(username: String): HiveProfile
     }
 `
