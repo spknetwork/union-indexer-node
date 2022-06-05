@@ -107,10 +107,16 @@ void (async () => {
                 const patch = op[1].body
                 var dmp = new DiffMatchPatch();
 
+                let body;
+                try {
+                  body = dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body)
+                } catch {
+                  body = patch
+                }
                 await posts.findOneAndUpdate(alreadyExisting, {
                   $set: {
                     ...op[1],
-                    body: dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body),
+                    body,
                     json_metadata,
                     "state_control.block_height": block_height,
                     tags,
