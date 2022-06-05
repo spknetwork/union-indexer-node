@@ -5,6 +5,8 @@ import Pushable from 'it-pushable'
 
 export const HiveClient = new Client(process.env.HIVE_HOST || 'https://api.deathwing.me')
 
+export const OFFCHAIN_HOST = process.env.OFFCHAIN_HOST || "https://us-01.infra.3speak.tv/v1/graphql"
+
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
     const queue = new PQueue({ concurrency: 50 })
