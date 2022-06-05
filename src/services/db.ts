@@ -1,4 +1,6 @@
 import { MongoClient } from 'mongodb'
+import 'dotenv/config'
+
 
 const MONGO_HOST = process.env.MONGO_HOST || '127.0.0.1:27017'
 
