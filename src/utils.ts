@@ -7,6 +7,8 @@ export const HiveClient = new Client(process.env.HIVE_HOST || 'https://api.death
 
 export const OFFCHAIN_HOST = process.env.OFFCHAIN_HOST || "https://us-01.infra.3speak.tv/v1/graphql"
 
+export const CERAMIC_HOST = process.env.CERAMIC_HOST || "https://ceramic.3speak.tv"
+
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
     const queue = new PQueue({ concurrency: 50 })
@@ -158,3 +160,5 @@ export function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
   
+
+export const NULL_DID = 'did:key:z6MkeTG3bFFSLYVU7VqhgZxqr6YzpaGrQtFMh1uvqGy1vDnP' // Null address should go to an empty ed25519 key

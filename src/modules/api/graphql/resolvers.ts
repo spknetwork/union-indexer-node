@@ -1,6 +1,8 @@
 import GraphQLJSON from 'graphql-type-json'
 import { indexerContainer } from '..'
-import {HiveClient} from '../../../utils'
+import {HiveClient, OFFCHAIN_HOST} from '../../../utils'
+import Axios from 'axios'
+import moment from 'moment';
 
 class HiveProfile {
     rawBlob: any;
@@ -75,6 +77,43 @@ class HiveProfile {
     }
 }
 
+const GRAPHQL_PROFILE = `
+
+query Profile($did: String) {
+    ceramicProfile(userId: $did) {
+        did
+        name
+        description
+        website
+        location
+        emoji
+        birthDate
+        url
+        gender
+        homeLocation
+        residenceCountry
+    }
+}
+`
+
+class CeramicProfile {
+    data: any;
+    constructor(data: any) {
+        this.data = data
+    }
+
+    static async run(args: any) {
+        //TODO caching/perma-storage
+        const {data} = await Axios.post(OFFCHAIN_HOST, {
+            query: GRAPHQL_PROFILE,
+            variables: {
+                did: args.did
+            }
+        })
+        console.log(data)
+    }
+}
+
 export class Post {
   rawDoc: any
 
@@ -141,6 +180,10 @@ export class Post {
   get post_type() {
     return this.rawDoc.post_type
   }
+  
+  get off_chain_id() {
+    return this.rawDoc.off_chain_id
+  }
 
   get __typename() {
     if(this.rawDoc.TYPE === "HIVE") {
@@ -192,6 +235,63 @@ export class Post {
   }
 
   async children(args) {
+    if (this.off_chain_id) {
+      const { data } = await Axios.post(OFFCHAIN_HOST, {
+        query: `
+        query Query($parent_id: String){
+          publicFeed(parent_id: $parent_id) {
+          stream_id
+          version_id
+          parent_id
+          creator_id
+          title
+          body
+          category
+          lang
+          type
+          app
+          json_metadata
+          app_metadata
+          debug_metadata
+          community_ref
+          created_at
+          updated_at
+        }
+      }`,
+        variables: {
+          parent_id: this.off_chain_id,
+        },
+      })
+
+      console.log('offchain responses', JSON.stringify(data))
+      for(let post of data.data.publicFeed) {
+        console.log(post)
+        let partial = {
+          body: post.body,
+          title: post.title,
+          json_metadata: post.json_metadata,
+          app_metadata: post.app_metadata,
+          debug_metadata: post.debug_metadata,
+          permlink: post.stream_id,
+          author: post.creator_id,
+          parent_author: this.author,
+          parent_permlink: this.permlink,
+          created_at: new Date(post.created_at),
+          updated_at: new Date(post.updated_at),
+          TYPE: "CERAMIC",
+          origin_control: {
+            allowed_by_type: false,
+            allowed_by_parent: true
+          },
+        }
+        console.log(partial)
+        try {
+          await indexerContainer.self.posts.insertOne(partial)
+        } catch {
+
+        }
+      }
+    }
     return (await indexerContainer.self.posts
       .find(
         {
@@ -244,6 +344,11 @@ export const Resolvers = {
     if (args.permlink) {
       mongodbQuery['permlink'] = args.permlink
     }
+    if(args.apps) {
+      mongodbQuery['json_metadata.app'] = {
+        $in: args.apps
+      }
+    }
     return {
       items: (
         await indexerContainer.self.posts
@@ -256,7 +361,9 @@ export const Resolvers = {
     }
   },
   async latestFeed(args: any) {
-    const mongodbQuery = {}
+    const mongodbQuery = {
+        //"TYPE": "CERAMIC"
+    }
     if (args.parent_permlink) {
       mongodbQuery['parent_permlink'] = args.parent_permlink
     }
@@ -268,8 +375,13 @@ export const Resolvers = {
     }
     if(!args.allow_comments) {
         mongodbQuery['parent_author'] = {
-            $eq: ""
+            $in: ["", null]
         }
+    }
+    if(args.apps) {
+      mongodbQuery['json_metadata.app'] = {
+        $in: args.apps
+      }
     }
     console.log(mongodbQuery)
     return {
@@ -283,7 +395,100 @@ export const Resolvers = {
             }
           })
           .toArray()
-      ).map((e) => new Post(e)),
+      ).map((e) => {
+        return new Post(e)
+      }),
+    }
+  },
+  async trendingFeed(args: any) {
+    const mongodbQuery = {
+      //"TYPE": "CERAMIC"
+      created_at: {
+        $gt: moment().subtract('7', 'day')
+      }
+    }
+    if(!args.allow_comments) {
+        mongodbQuery['parent_author'] = {
+            $in: ["", null]
+        }
+    }
+    if(args.apps) {
+      mongodbQuery['json_metadata.app'] = {
+        $in: args.apps
+      }
+    }
+    return {
+      items: (
+        await indexerContainer.self.posts
+          .find(mongodbQuery, {
+            limit: args.limit || 100,
+            skip: args.skip,
+            sort: {
+              "stats.num_comments": -1
+            }
+          })
+          .toArray()
+      ).map((e) => {
+        return new Post(e)
+      }),
+    }
+  }, 
+  async followingFeed(args: any) {
+    let following = []
+    if(args.follower.startsWith("did:")) {
+      const { data } = await Axios.post(OFFCHAIN_HOST, {
+        query: `
+        query Query($follower: String){
+          publicFeed(parent_id: $parent_id) {
+            stream_id
+            version_id
+            parent_id
+            creator_id
+            title
+            body
+            category
+            lang
+            type
+            app
+            json_metadata
+            app_metadata
+            debug_metadata
+            community_ref
+            created_at
+            updated_at
+          } 
+        }`,
+        variables: {
+          follower: args.follower,
+        },
+      })
+
+    } else {
+      const data = await HiveClient.database.call('get_following', [
+        args.follower
+      ])
+
+      data.map(e => {
+        following.push(e.following)
+      })
+    }
+
+    const out = await indexerContainer.self.posts.find({
+      author: {
+        $in: following
+      }
+    }, {
+      limit: args.limit || 100,
+      skip: args.skip,
+      sort: {
+        "created_at": -1
+      },
+    }).toArray()
+
+    return {
+      items: out.map(e => {
+        return new Post(e)
+      })
     }
   },
   async profile(args) {
@@ -295,5 +500,18 @@ export const Resolvers = {
     }
 
     return null
+  },
+  async socialPost(args) {
+    let mongodbQuery = {
+
+    }
+    
+    if(args.author) {
+      mongodbQuery['author'] = args.author;
+    }
+    if(args.permlink) {
+      mongodbQuery['permlink'] = args.permlink;
+    }
+    return new Post(await indexerContainer.self.posts.findOne(mongodbQuery))
   }
 }

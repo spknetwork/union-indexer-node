@@ -58,19 +58,64 @@ export const Schema = `
         total_hive_reward: Float
     }
 
-    type CeramicPost {
-        stream_id: String
-        version_id: String
-        parent_id: String
+    interface SocialPost {
+        parent_author: String
+        parent_permlink: String
+
+        permlink: String
 
         title: String
         body: String
+        
+        author: String
+        author_profile: MergedProfile
+
+        stats: PostStats
+
+        json_metadata: JSON
+
+        children: [MergedPost]
+
+        created_at: String
+        updated_at: String
+    }
+
+    type CeramicPost implements SocialPost {
+        parent_author: String
+        parent_permlink: String
+
+        permlink: String
+
+        title: String
+        body: String
+
+        created_at: String
+        updated_at: String
 
         json_metadata: JSON
         app_metadata: JSON
         debug_metadata: JSON
 
-        author: CeramicProfile
+        author: String
+        author_profile: CeramicProfile
+
+        stats: PostStats
+        
+        children: [MergedPost]
+
+        parent_post: MergedPost
+
+        # Same type as HivePost, interchangeable with stream_id
+        off_chain_id: String
+
+        #  Ceramic legacy fields
+        stream_id: String
+        parent_id: String
+        version_id: String
+
+        # Access original content on Ceramic
+        original_content: JSON
+
     }
     
     type HivePost {
@@ -94,7 +139,7 @@ export const Schema = `
         
         community_ref: String
         
-        children: [HivePost]
+        children: [MergedPost]
 
         created_at: String
         updated_at: String
@@ -112,6 +157,7 @@ export const Schema = `
         community: JSON
         parent_post: HivePost
         stats: PostStats
+        off_chain_id: String
     }
 
     union MergedPost = HivePost | CeramicPost
@@ -121,10 +167,13 @@ export const Schema = `
     }
 
     type Query {
-        hello: String
-        blog: [HivePost]
-        publicFeed(parent_permlink: String, permlink: String, author: String, limit: Int, skip: Int): FeedOutput
-        latestFeed(parent_permlink: String, permlink: String, author: String, limit: Int, skip: Int): FeedOutput
-        profile(username: String): HiveProfile
+        publicFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
+        latestFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
+        trendingFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
+        followingFeed(follower: String, limit: Int, skip: Int): FeedOutput
+
+        socialPost(author: String, permlink: String): MergedPost
+
+        profile(username: String): MergedProfile
     }
 `
