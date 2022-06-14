@@ -58,6 +58,21 @@ void (async () => {
 
       for (let trx of block.transactions) {
         for (let op of trx.operations) {
+          if(op[0] === "vote") {
+            const vote_op = op[1]
+            console.log(vote_op)
+            const post = await posts.findOne({
+              author: vote_op.author,
+              permlink: vote_op.permlink,
+            })
+            await posts.findOneAndUpdate(post, {
+              need_stat_update: true
+            })
+          }
+          if(op[0] === "custom_json") {
+            //TODO detect stream_id creation from on chain references
+
+          } 
           if (op[0] === 'comment') {
             let json_metadata
             let tags

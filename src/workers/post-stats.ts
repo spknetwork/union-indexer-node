@@ -19,7 +19,13 @@ void (async () => {
 
   for (;;) {
     const items = await posts.find({
-      metadata_status: 'unprocessed',
+      $or: [{
+        need_stat_update: true
+      }, {
+        need_stat_update: {
+          $exists: false
+        }
+      }]
     })
 
     for await (let itm of items) {
@@ -52,6 +58,7 @@ void (async () => {
             'stats.num_comments': num_comments,
             'stats.num_votes': total_votes,
             'stats.total_hive_reward': total_reward,
+            need_stat_update: false,
           },
         })
       })
