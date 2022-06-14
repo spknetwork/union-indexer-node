@@ -60,7 +60,6 @@ void (async () => {
         for (let op of trx.operations) {
           if(op[0] === "vote") {
             const vote_op = op[1]
-            console.log(vote_op)
             const post = await posts.findOne({
               author: vote_op.author,
               permlink: vote_op.permlink,
