@@ -31,6 +31,17 @@ services:
     environment:
       MONGO_HOST: mongo:27017
       HIVE_HOST: "https://api.deathwing.me"
+  union-indexer_stats:
+    image: union-indexer-node
+    restart: always
+    depends_on:
+      - union-indexer-node
+    networks:
+      - union-indexer-network
+    command: npm run start-worker:stats
+    environment:
+      MONGO_HOST: mongo:27017
+      HIVE_HOST: "https://api.deathwing.me"
   mongo:
     container_name: mongo
     image: mongo:latest
