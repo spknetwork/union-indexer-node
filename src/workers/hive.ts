@@ -65,11 +65,13 @@ void (async () => {
               author: vote_op.author,
               permlink: vote_op.permlink,
             })
-            await posts.findOneAndUpdate(post, {
-              $set: {
-                need_stat_update: true
-              }
-            })
+            if(post) {
+              await posts.findOneAndUpdate(post, {
+                $set: {
+                  need_stat_update: true
+                }
+              })
+            }
           }
           if(op[0] === "custom_json") {
             //TODO detect stream_id creation from on chain references
