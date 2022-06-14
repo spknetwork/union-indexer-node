@@ -66,7 +66,9 @@ void (async () => {
               permlink: vote_op.permlink,
             })
             await posts.findOneAndUpdate(post, {
-              need_stat_update: true
+              $set: {
+                need_stat_update: true
+              }
             })
           }
           if(op[0] === "custom_json") {
