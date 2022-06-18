@@ -54,7 +54,7 @@ services:
       MONGO_HOST: mongo:27017
       HIVE_HOST: "https://api.deathwing.me"
   mongo:
-    container_name: ipfs_union
+    container_name: mongo_union
     image: mongo:latest
     ports:
       - 27027:27017
