@@ -26,6 +26,8 @@ docker-compose up
 ### Requirements
 - Ceramic API endpoint
 - SPK Offchain Indexer API endpoint
+Optional:
+- HIVE account for bridging/chain references
 
 ### API
 
