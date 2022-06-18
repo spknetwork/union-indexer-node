@@ -48,7 +48,8 @@
     "test:report": "sensible-browser ./coverage/lcov-report/index.html",
     "test": "jest --coverage",
     "start-worker:hive-events": "node dist/workers/hive.js",
-    "start-worker:stats": "node dist/workers/post-stats.js"
+    "start-worker:stats": "node dist/workers/post-stats.js",
+    "start-worker:offchain-ids": "node dist/workers/post-stats.js"
   },
   "author": "",
   "license": "ISC"
