@@ -49,6 +49,7 @@ void (async () => {
   }, 2000)
 
   str.startStream()
+  let last_time;
 
   try {
     for await (let data of str.stream) {
@@ -56,6 +57,7 @@ void (async () => {
       //console.log(block_height)
       block_height_current = block_height
 
+      last_time = new Date(block.timestamp);
       for (let trx of block.transactions) {
         for (let op of trx.operations) {
           if(op[0] === "vote") {
@@ -73,8 +75,24 @@ void (async () => {
             }
           }
           if(op[0] === "custom_json") {
-            //TODO detect stream_id creation from on chain references
-
+            const {id, json: json_raw} = op[1];
+            const json = JSON.parse(json_raw)
+            
+            if(id === "spk.bridge_id") {
+              console.log(json, id)
+              
+              const post = await posts.findOne({
+                author: json.author,
+                permlink: json.permlink
+              })
+              if(post) {
+                await posts.findOneAndUpdate(post, {
+                  $set: {
+                    needs_stream_id: true
+                  }
+                })
+              }
+            }
           } 
           if (op[0] === 'comment') {
             let json_metadata
@@ -178,6 +196,7 @@ void (async () => {
         {
           $set: {
             block_height,
+            last_time,
           },
         },
         {

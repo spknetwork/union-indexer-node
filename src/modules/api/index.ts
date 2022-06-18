@@ -4,17 +4,17 @@ import { NestFactory } from '@nestjs/core'
 import { graphqlHTTP } from 'express-graphql' // ES6
 import { buildSchema } from 'graphql'
 import { CoreService } from '../../services'
+import { GatewayApiController } from './controller'
 import { Resolvers } from './graphql/resolvers'
 import { Schema } from './graphql/schema'
 
 export const ipfsContainer: {  } = {} as any
 export const indexerContainer: { self: CoreService  } = {} as any
 
-export const INDEXER_API_BASE_URL = '/api/v0/node'
 
 @Module({
   imports: [],
-  controllers: [],
+  controllers: [GatewayApiController],
   providers: [],
 })
 class ControllerModule {}
@@ -35,7 +35,7 @@ export class IndexerApiModule {
       cors: true,
     })
     app.use(
-      '/v1/graphql',
+      '/api/v1/graphql',
       graphqlHTTP({
         schema: buildSchema(Schema),
         graphiql: true,

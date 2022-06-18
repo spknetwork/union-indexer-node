@@ -2,13 +2,17 @@ import { Collection, Db, MongoClient } from 'mongodb'
 import { CERAMIC_HOST } from '../utils';
 import { logger } from './common/logger.singleton'
 import {MONGODB_URL} from './db'
+// @ts-ignore
+import type { CeramicClient } from '@ceramicnetwork/http-client';
+import { StreamBridge } from './streamBridge';
 
 export class CoreService {
     self: CoreService;
     db: Db;
     posts: Collection;
     streamState: Collection;
-    ceramic: any;
+    ceramic: CeramicClient;
+    streamBridge: StreamBridge;
     
     async start() {
         const url = MONGODB_URL
@@ -28,6 +32,8 @@ export class CoreService {
       
         this.ceramic = new CeramicClient(CERAMIC_HOST)
         
+
+        this.streamBridge = new StreamBridge(this);
 
         try {
             await this.streamState.createIndex({
