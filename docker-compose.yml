@@ -54,7 +54,7 @@ services:
       MONGO_HOST: mongo:27017
       HIVE_HOST: "https://api.deathwing.me"
   mongo:
-    container_name: mongo
+    container_name: ipfs_union
     image: mongo:latest
     ports:
       - 27027:27017
@@ -63,7 +63,7 @@ services:
     volumes:
       - ./data/mongodb:/data/db
   ipfs:
-    container_name: ipfs
+    container_name: ipfs_union
     image: ipfs/go-ipfs:latest
     entrypoint: ["echo", "Service IPFS disabled"]
     command:
