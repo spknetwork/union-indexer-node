@@ -76,9 +76,9 @@ void (async () => {
           }
           if(op[0] === "custom_json") {
             const {id, json: json_raw} = op[1];
-            const json = JSON.parse(json_raw)
             
             if(id === "spk.bridge_id") {
+              const json = JSON.parse(json_raw)
               console.log(json, id)
               
               const post = await posts.findOne({
