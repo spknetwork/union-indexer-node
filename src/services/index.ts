@@ -89,5 +89,12 @@ export class CoreService {
         } catch {
 
         }
+        try  {
+            await this.posts.createIndex({
+                "body": "text",
+            })
+        } catch {
+
+        }
     }
 }
