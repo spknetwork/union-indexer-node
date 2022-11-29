@@ -145,7 +145,7 @@ void (async () => {
 
                 let body;
                 try {
-                  body = dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body)
+                  body = dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body)[0]
                 } catch {
                   body = patch
                 }
