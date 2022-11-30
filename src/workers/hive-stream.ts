@@ -1,9 +1,9 @@
-import { doTypesOverlap } from 'graphql'
 import { CONFIG } from '../config'
 import { ALLOWED_APPS, detectPostType } from '../services/block_processing/posts'
 import { mongo } from '../services/db'
-import { fastStream } from '../utils'
+import { fastStream, HiveClient } from '../utils'
 import DiffMatchPatch from '@2toad/diff-match-patch'
+import Moment from 'moment'
 
 void (async () => {
   const db = mongo.db('spk-union-indexer')
@@ -32,6 +32,7 @@ void (async () => {
       heapUsed: process.memoryUsage().heapUsed
     })
     if(process.memoryUsage().heapUsed > 500000 * 1000) {
+      //Safety to prevent buffer overflow
       process.exit(0)
     }
     await stats.findOneAndUpdate({
@@ -42,11 +43,46 @@ void (async () => {
             nowTime: new Date().toISOString(),
             totalTime: totalTime,
             'blocks/s': Number(((block_height_current - startBlock) / totalTime).toFixed()),
+            heapUsed: process.memoryUsage().heapUsed,
+            block_height_current,
         }
     }, {
         upsert: true
     })
   }, 2000)
+
+  setInterval(async () => {
+    try {
+      const blockHeight = await HiveClient.blockchain.getCurrentBlockNum()
+      const statsCurrent = await stats.findOne({
+        key: "stats"
+      })
+      //Block lag should always be getting smaller if we are catching up. 
+      const blockLag = blockHeight - statsCurrent.block_height_current
+      const blockEta = blockLag / statsCurrent['blocks/s']
+      const tableObj = {
+        blockHeight,
+        blockLag,
+        blockLagDiff: blockLag - statsCurrent.blockLag, //This value should be negative if we are catching up. If it's consistently going up then there is a problem
+        blockEta: Moment.duration(blockEta, 'seconds').humanize(true),
+        blockEtaSeconds: blockEta,
+        blockEtaDate: Moment().add(blockEta, 'seconds').toISOString()
+      }
+      console.table(tableObj)
+      await stats.findOneAndUpdate({
+        key: "stats"
+      }, {
+        $set: {
+          blockLag: tableObj.blockLag,
+          syncEtaSeconds: Math.round(blockEta),
+          blockLagDiff: blockLag - statsCurrent.blockLag,
+        }
+      })
+
+    } catch(ex) {
+      console.log(ex)
+    }
+  }, 30 * 1000) //60s
 
   str.startStream()
   let last_time;

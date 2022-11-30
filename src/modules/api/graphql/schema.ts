@@ -166,6 +166,12 @@ export const Schema = `
         items: [MergedPost]
     }
 
+    type SyncState {
+        blockLag: Int
+        syncEtaSeconds: Int
+        latestBlockLagDiff: Int
+    }
+
     type Query {
         publicFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         latestFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
@@ -175,5 +181,7 @@ export const Schema = `
         socialPost(author: String, permlink: String): MergedPost
 
         profile(username: String): MergedProfile
+
+        syncState: SyncState
     }
 `

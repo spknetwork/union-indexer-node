@@ -513,5 +513,16 @@ export const Resolvers = {
       mongodbQuery['permlink'] = args.permlink;
     }
     return new Post(await indexerContainer.self.posts.findOne(mongodbQuery))
+  },
+  async syncState() {
+    const currentStats = await indexerContainer.self.stats.findOne({
+      key: "stats"
+    })
+
+    return {
+      blockLag: currentStats.blockLag,
+      syncEtaSeconds: currentStats.syncEtaSeconds,
+      latestBlockLagDiff: currentStats.blockLagDiff,
+    }
   }
 }
