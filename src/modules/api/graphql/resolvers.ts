@@ -404,7 +404,7 @@ export const Resolvers = {
     const mongodbQuery = {
       //"TYPE": "CERAMIC"
       created_at: {
-        $gt: moment().subtract('7', 'day')
+        $gt: moment().subtract('7', 'day').toDate()
       }
     }
     if(!args.allow_comments) {
