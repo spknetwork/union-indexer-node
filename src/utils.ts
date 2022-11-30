@@ -3,7 +3,7 @@ import EventEmitter from 'events'
 import { BlockchainMode, BlockchainStreamOptions, Client } from '@hiveio/dhive'
 import Pushable from 'it-pushable'
 
-export const HiveClient = new Client(process.env.HIVE_HOST || 'https://api.deathwing.me')
+export const HiveClient = new Client(process.env.HIVE_HOST?.split(',') || ["https://anyx.io", "https://api.openhive.network"])
 
 export const OFFCHAIN_HOST = process.env.OFFCHAIN_HOST || "https://us-01.infra.3speak.tv/v1/graphql"
 
@@ -11,7 +11,7 @@ export const CERAMIC_HOST = process.env.CERAMIC_HOST || "https://ceramic.3speak.
 
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
-    const queue = new PQueue({ concurrency: 15 })
+    const queue = new PQueue({ concurrency: 35 })
     if(!streamOpts.endBlock) {
         const currentBlock = await HiveClient.blockchain.getCurrentBlock()
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
