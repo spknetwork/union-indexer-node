@@ -31,8 +31,18 @@ void (async () => {
       'blocks/s': Number(((block_height_current - startBlock) / totalTime).toFixed()),
       heapUsed: process.memoryUsage().heapUsed
     })
-    if(process.memoryUsage().heapUsed > 500000 * 1000) {
+    if(process.memoryUsage().heapUsed > 400000 * 1000) {
       //Safety to prevent buffer overflow
+      console.log("HIT SOFT MEMORY LIMIT: PAUSING")
+      str.stopStream()
+    }
+    if(process.memoryUsage().heapUsed < 300000 * 1000) {
+      //Safety to prevent buffer overflow
+      str.resumeStream()
+    }
+    if(process.memoryUsage().heapUsed > 800000 * 1000) {
+      //Safety to prevent buffer overflow
+      console.log("HIT MEMORY LIMIT: STOPPING")
       process.exit(0)
     }
     await stats.findOneAndUpdate({
@@ -94,8 +104,10 @@ void (async () => {
       block_height_current = block_height
 
       last_time = new Date(block.timestamp);
-      for (let trx of block.transactions) {
-        for (let op of trx.operations) {
+      console.log('prcessing', block_height_current)
+      await Promise.all(block.transactions.map(async (tx: any) => {
+        for (let op of tx.operations) {
+
           if(op[0] === "vote") {
             const vote_op = op[1]
             const post = await posts.findOne({
@@ -103,7 +115,9 @@ void (async () => {
               permlink: vote_op.permlink,
             })
             if(post) {
-              await posts.findOneAndUpdate(post, {
+              await posts.findOneAndUpdate({
+                _id: post._id
+              }, {
                 $set: {
                   need_stat_update: true
                 }
@@ -122,7 +136,9 @@ void (async () => {
                 permlink: json.permlink
               })
               if(post) {
-                await posts.findOneAndUpdate(post, {
+                await posts.findOneAndUpdate({
+                  _id: post._id
+                }, {
                   $set: {
                     needs_stream_id: true
                   }
@@ -144,11 +160,11 @@ void (async () => {
               json_metadata,
             })
             //console.log(typye)
-
+  
             //console.log(typye.type)
             //console.log(ALLOWED_APPS.includes(typye.type))
             const { parent_author, parent_permlink, author, permlink } = op[1]
-
+  
             //Parses posts that belong to a parent of interesting content.
             let allowed_by_parent = false
             let allowed_by_type = ALLOWED_APPS.includes(typye.type);
@@ -163,9 +179,9 @@ void (async () => {
             }
             //If parent then do not continue
             if (!ALLOWED_APPS.includes(typye.type) && !allowed_by_parent) {
-              continue
+              return;
             }
-
+  
             const alreadyExisting = await posts.findOne({
               parent_author,
               parent_permlink,
@@ -178,14 +194,16 @@ void (async () => {
                 //TODO: more safety on updating already existing records. Cleanse fields
                 const patch = op[1].body
                 var dmp = new DiffMatchPatch();
-
+  
                 let body;
                 try {
                   body = dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body)[0]
                 } catch {
                   body = patch
                 }
-                await posts.findOneAndUpdate(alreadyExisting, {
+                await posts.findOneAndUpdate({
+                  _id: alreadyExisting._id
+                }, {
                   $set: {
                     ...op[1],
                     body,
@@ -224,7 +242,7 @@ void (async () => {
             }
           }
         }
-      }
+      }))
       await hiveStreamState.findOneAndUpdate(
         {
           id: 'block_height',
