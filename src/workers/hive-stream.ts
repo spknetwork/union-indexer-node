@@ -10,6 +10,8 @@ void (async () => {
   const hiveStreamState = db.collection('hive_stream_state')
   const posts = db.collection('posts')
   const stats = db.collection('stats')
+  const hiveProfiles = db.collection('profiles')
+  const followsDb = db.collection('follows')
   await mongo.connect()
 
   const hiveState = await hiveStreamState.findOne({
@@ -104,7 +106,6 @@ void (async () => {
       block_height_current = block_height
 
       last_time = new Date(block.timestamp);
-      console.log('prcessing', block_height_current)
       await Promise.all(block.transactions.map(async (tx: any) => {
         for (let op of tx.operations) {
 
@@ -145,7 +146,87 @@ void (async () => {
                 })
               }
             }
-          } 
+            if(id === "community") {
+              const json = JSON.parse(json_raw)
+
+              const account = op[1].required_posting_auths[0]
+             
+              if(json[0] === "subscribe") { 
+                await followsDb.findOneAndUpdate({
+                  _id: `hive-${account}-${json[1].community}`
+                }, {
+                  $set: {
+                    follower: account,
+                    following: json[1].community,
+                    what: 'community',
+                    followed_at: new Date(block.timestamp)
+                  }
+                }, {
+                  upsert: true
+                })
+              }
+              if(json[0] === "unsubscribe") {
+                await followsDb.findOneAndDelete({
+                  _id: `hive-${account}-${json[1].community}`
+                })
+              }
+            }
+            if(id === "spk.follow") {
+              //TODO: Implement spk following of offchain accounts
+            }
+            if(id === 'follow') {
+              const json = JSON.parse(json_raw)
+              if(json[0] === "follow") {
+                const account = op[1].required_posting_auths[0]
+                if(account !== json[1].follower) {
+                  continue;
+                }
+                const followed = json[1].what.length >= 1
+                if(followed) {
+                  await followsDb.findOneAndUpdate({
+                    _id: `hive-${json[1].follower}-${json[1].following}`
+                  }, {
+                    $set: {
+                      follower: json[1].follower,
+                      following: json[1].following,
+                      what: json[1].what,
+                      followed_at: new Date(block.timestamp)
+                    }
+                  }, {
+                    upsert: true
+                  })
+                } else {
+                  await followsDb.findOneAndDelete({
+                    _id: `hive-${json[1].follower}-${json[1].following}`
+                  })
+                }
+              }
+            }
+          }
+          if(op[0] === 'account_update2') {
+            const profileData = op[1]
+            const posting_json_metadata = JSON.parse(profileData.posting_json_metadata)
+            // console.log('baden baden', posting_json_metadata)
+            // console.log(tx.operations, tx)
+            await hiveProfiles.findOneAndUpdate({
+              _id: `hive-${profileData.account}`
+            }, {
+              $set: {
+                username: profileData.account,
+                TYPE: "HIVE",
+                displayName: posting_json_metadata.profile.name,
+                description: posting_json_metadata.profile.about,
+                location: posting_json_metadata.profile.location,
+                website: posting_json_metadata.profile.website,
+                "extra.pinned_post": posting_json_metadata.profile.pinned,
+                "images.avatar": posting_json_metadata.profile.profile_image,
+                "images.cover": posting_json_metadata.profile.cover_image,
+                "did": posting_json_metadata.did,
+              }
+            }, {
+              upsert: true
+            })
+          }
           if (op[0] === 'comment') {
             let json_metadata
             let tags
