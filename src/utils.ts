@@ -3,7 +3,7 @@ import EventEmitter from 'events'
 import { BlockchainMode, BlockchainStreamOptions, Client } from '@hiveio/dhive'
 import Pushable from 'it-pushable'
 
-export const HiveClient = new Client(process.env.HIVE_HOST?.split(',') || ["https://anyx.io", "https://api.openhive.network"])
+export const HiveClient = new Client(process.env.HIVE_HOST?.split(',') || ["https://api.deathwing.me"])
 
 export const OFFCHAIN_HOST = process.env.OFFCHAIN_HOST || "https://us-01.infra.3speak.tv/v1/graphql"
 
@@ -31,6 +31,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
     let currentBlock = streamOpts.startBlock || 1
     const events = new EventEmitter()
     const streamOut = Pushable()
+    let streamPaused = false;
   
     let parser_height = streamOpts.startBlock || 0
   
@@ -65,7 +66,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
     }, 1)
   
     const startStream = async () => {
-        let finalBlock;
+      let finalBlock;
       for (let x = 1; x <= endSet; x++) {
         activeLength = activeLength + 1
         const streamOptsInput:BlockchainStreamOptions = {
@@ -91,6 +92,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
               })
               .on('error', (error) => {
                 clearInterval(eventQueue)
+                console.log('error is', error)
                 streamOut.end(error)
               })
               .on('end', function () {
@@ -106,6 +108,15 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
           })
         })
         await queue.onSizeLessThan(1250)
+        if(streamPaused === true) {
+          queue.pause()
+          await new Promise(async (resolve) => {
+            events.once("unpause", () => {
+              resolve(null)
+              queue.start()
+            })
+          })
+        }
       }
       await queue.onIdle();
       console.log("ITS IDLE")
@@ -143,6 +154,15 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
     const onDone = async () => {
       await queue.onIdle();
     }
+    
+    const resumeStream = async () => {
+      streamPaused = false
+      events.emit('unpause')
+    }
+    
+    const stopStream = async () => {
+      streamPaused = true
+    }
 
     events.on('block', (block_height, block) => {
         streamOut.push([block_height, block])
@@ -151,6 +171,8 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
     return {
       events,
       startStream,
+      resumeStream,
+      stopStream,
       onDone,
       stream: streamOut
     }
