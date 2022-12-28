@@ -43,6 +43,30 @@ export const Schema = `
     union MergedProfile = HiveProfile | CeramicProfile
 
 
+    type Follow {
+        follower: String
+        follower_profile: MergedProfile
+        following: String
+        following_profile: MergedProfile
+        followed_at: String
+    }
+
+    type FollowOverview {
+        followings_count: Int
+        followings: [Follow]
+        followers_count: Int
+        followers: [Follow]
+    }
+
+    type TrendingTag {
+        tag: String
+        score: Int
+    }
+
+    type TrendingTags {
+        tags: [TrendingTag]
+    }
+
     type Notification {
         target: String
         type: String
@@ -183,5 +207,7 @@ export const Schema = `
         profile(username: String): MergedProfile
 
         syncState: SyncState
+
+        trendingTags(limit: Int): TrendingTags
     }
 `

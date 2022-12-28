@@ -524,5 +524,48 @@ export const Resolvers = {
       syncEtaSeconds: currentStats.syncEtaSeconds,
       latestBlockLagDiff: currentStats.blockLagDiff,
     }
+  },
+  async trendingTags(args: any) {
+    const tagsQuery = await indexerContainer.self.posts.aggregate([
+      {
+        '$match': {
+          'created_at': {
+            $gt: moment().subtract('14', 'day').toDate()
+          }
+        }
+      }, {
+        '$unwind': {
+          'path': '$tags', 
+          'includeArrayIndex': 'string', 
+          'preserveNullAndEmptyArrays': false
+        }
+      }, {
+        '$group': {
+          '_id': '$tags', 
+          'score': {
+            '$sum': 1
+          }
+        }
+      }, {
+        '$sort': {
+          'score': -1
+        }
+      },
+      {
+        $limit: args.limit || 5
+      },
+      {
+        $project: {
+          _id: 0,
+          "tag": "$_id",
+          score: "$score"
+        }
+      }
+    ])
+    const tags = await tagsQuery.toArray();
+
+    return {
+      tags
+    }
   }
 }
