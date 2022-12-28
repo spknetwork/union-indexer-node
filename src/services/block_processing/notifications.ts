@@ -5,6 +5,14 @@ import { PostHive } from '../../types/posts'
 const mentionRegex = /((?:^|[^a-zA-Z0-9_!#$%&*@＠]|(?:^|[^a-zA-Z0-9_+~.-])(?:rt|RT|rT|Rt):?))([@＠])([a-zA-Z0-9_:-]{1,80})(\/[a-zA-Z:][a-zA-Z0-9_:-]{0,24})?/g
 
 export function createNotificationsFromPost(post: PostHive) {
+  if(!post.body) {
+    return [
+      
+    ]
+  }
+  if(typeof post.body !== 'string') {
+    return []
+  }
   let possibleNames = []
   post.body.replace(
     mentionRegex,
@@ -37,7 +45,9 @@ export function createNotificationsFromPost(post: PostHive) {
     }
     out.push({
       target,
+      from: post.author,
       type,
+      notification_type: "mention",
       mentioned_at: post.updated_at,
       ref: `hive/${post.author}/${post.permlink}`
     })
