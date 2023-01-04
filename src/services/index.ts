@@ -12,6 +12,7 @@ export class CoreService {
     posts: Collection;
     stats: Collection;
     streamState: Collection;
+    followsDb: Collection;
     ceramic: CeramicClient;
     streamBridge: StreamBridge;
     
@@ -27,6 +28,7 @@ export class CoreService {
         this.posts = this.db.collection('posts')
         this.streamState = this.db.collection('stream_state')
         this.stats = this.db.collection('stats')
+        this.followsDb = this.db.collection('follows')
         
         //We still need to use Ceramic on the union indexer a small amount. 
         // However, any Ceramic heavy operations should utilize the offchain indexer.

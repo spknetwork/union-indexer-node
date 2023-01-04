@@ -567,5 +567,72 @@ export const Resolvers = {
     return {
       tags
     }
+  },
+  community: async (args) => {
+
+  },
+  relatedPosts: async (args) => {
+    const postContent = await indexerContainer.self.posts.findOne({
+      permlink: args.permlink,
+      author: args.author
+    });
+    console.log(postContent.tags)
+    let OrQuery = []
+
+    OrQuery.push({
+      tags: {$in: postContent.tags} 
+    })
+    
+    if(postContent.parent_author === "") {
+      OrQuery.push({
+        parent_permlink: postContent.parent_permlink
+      })
+    }
+    
+    const items = await indexerContainer.self.posts.aggregate([{
+      $match: {
+        $or: OrQuery
+        
+      }
+    }, {
+      $sample: {
+        size: 25
+      }
+    }]).toArray()
+
+    return {
+      parentPost: new Post(postContent),
+      items: items.map(e => new Post(e))
+    }
+  },
+  follows: async (args) => {
+    const followingResult = await indexerContainer.self.followsDb.find({
+      follower: args.id
+    }).toArray()
+    const followersResult = await indexerContainer.self.followsDb.find({
+      following: args.id
+    }).toArray()
+
+    return {
+      followers: followersResult.map(e => ({...e, followed_at: e.followed_at.toISOString(), 
+        follower_profile: async () => Resolvers.profile({username: e.follower}),
+        following_profile: async () => Resolvers.profile({username: e.following})
+      })),
+      followers_count: async () => {
+        return await indexerContainer.self.followsDb.countDocuments({
+          following: args.id
+        })
+      },
+      followings: followingResult.map(e => ({
+        ...e, followed_at: e.followed_at.toISOString(), 
+        follower_profile: async () => {console.log('HLELO', await Resolvers.profile({username: e.follower})); return await Resolvers.profile({username: e.follower})},
+        following_profile: async () => Resolvers.profile({username: e.following})
+      })),
+      followings_count: async () => {
+        return await indexerContainer.self.followsDb.countDocuments({
+          follower: args.id
+        })
+      },
+    }
   }
 }

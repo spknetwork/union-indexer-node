@@ -12,6 +12,7 @@ void (async () => {
   const stats = db.collection('stats')
   const hiveProfiles = db.collection('profiles')
   const followsDb = db.collection('follows')
+  const communityDb = db.collection('communities')
   await mongo.connect()
 
   const hiveState = await hiveStreamState.findOne({
@@ -150,7 +151,7 @@ void (async () => {
               const json = JSON.parse(json_raw)
 
               const account = op[1].required_posting_auths[0]
-             
+              
               if(json[0] === "subscribe") { 
                 await followsDb.findOneAndUpdate({
                   _id: `hive-${account}-${json[1].community}`
@@ -168,6 +169,16 @@ void (async () => {
               if(json[0] === "unsubscribe") {
                 await followsDb.findOneAndDelete({
                   _id: `hive-${account}-${json[1].community}`
+                })
+              }
+              if(json[0] === "updateProps") {
+                await communityDb.findOneAndUpdate({
+                  _id: `hive/${account}`
+                }, {
+                  $set: {
+                    title: json.title,
+                    description: json.about
+                  }
                 })
               }
             }
@@ -208,19 +219,37 @@ void (async () => {
             const posting_json_metadata = JSON.parse(profileData.posting_json_metadata)
             // console.log('baden baden', posting_json_metadata)
             // console.log(tx.operations, tx)
+            if(!posting_json_metadata.profile) {
+              continue;
+            }
+            if(profileData.account.startsWith('hive-')) {
+              await communityDb.findOneAndUpdate({
+                _id: `hive/${profileData.account}`
+              }, {
+                $set: {
+                  username: profileData.account,
+                  TYPE: "HIVE",                  
+                  "images.avatar": posting_json_metadata.profile?.profile_image,
+                  "images.cover": posting_json_metadata.profile?.cover_image,
+                  "topics": posting_json_metadata.profile?.topcs,
+                }
+              }, {
+                upsert: true
+              })
+            }
             await hiveProfiles.findOneAndUpdate({
               _id: `hive-${profileData.account}`
             }, {
               $set: {
                 username: profileData.account,
                 TYPE: "HIVE",
-                displayName: posting_json_metadata.profile.name,
-                description: posting_json_metadata.profile.about,
-                location: posting_json_metadata.profile.location,
-                website: posting_json_metadata.profile.website,
-                "extra.pinned_post": posting_json_metadata.profile.pinned,
-                "images.avatar": posting_json_metadata.profile.profile_image,
-                "images.cover": posting_json_metadata.profile.cover_image,
+                displayName: posting_json_metadata.profile?.name,
+                description: posting_json_metadata.profile?.about,
+                location: posting_json_metadata.profile?.location,
+                website: posting_json_metadata.profile?.website,
+                "extra.pinned_post": posting_json_metadata.profile?.pinned,
+                "images.avatar": posting_json_metadata.profile?.profile_image,
+                "images.cover": posting_json_metadata.profile?.cover_image,
                 "did": posting_json_metadata.did,
               }
             }, {

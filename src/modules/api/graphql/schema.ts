@@ -187,7 +187,15 @@ export const Schema = `
     union MergedPost = HivePost | CeramicPost
 
     type FeedOutput {
+        parentPost: MergedPost
         items: [MergedPost]
+    }
+
+    type CommunityOutput {
+        title: String
+        description: String
+        iamges: ProfileImages
+        feed(limit: Int, skip: Int): FeedOutput
     }
 
     type SyncState {
@@ -209,5 +217,8 @@ export const Schema = `
         syncState: SyncState
 
         trendingTags(limit: Int): TrendingTags
+        relatedPosts(permlink: String, author: String): FeedOutput
+        community(id: String): CommunityOutput
+        follows(id: String): FollowOverview
     }
 `
