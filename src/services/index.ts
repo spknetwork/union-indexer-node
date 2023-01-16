@@ -15,6 +15,8 @@ export class CoreService {
     followsDb: Collection;
     ceramic: CeramicClient;
     streamBridge: StreamBridge;
+    profileDb: Collection;
+    communityDb: Collection;
     
     async start() {
         const url = MONGODB_URL
@@ -29,6 +31,8 @@ export class CoreService {
         this.streamState = this.db.collection('stream_state')
         this.stats = this.db.collection('stats')
         this.followsDb = this.db.collection('follows')
+        this.profileDb = this.db.collection('profiles')
+        this.communityDb = this.db.collection('communities')
         
         //We still need to use Ceramic on the union indexer a small amount. 
         // However, any Ceramic heavy operations should utilize the offchain indexer.

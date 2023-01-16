@@ -177,7 +177,7 @@ void (async () => {
                 }, {
                   $set: {
                     title: json.title,
-                    description: json.about
+                    about: json.about
                   }
                 })
               }
@@ -236,15 +236,16 @@ void (async () => {
               }, {
                 upsert: true
               })
+              continue;
             }
             await hiveProfiles.findOneAndUpdate({
-              _id: `hive-${profileData.account}`
+              _id: `hive/${profileData.account}`
             }, {
               $set: {
                 username: profileData.account,
                 TYPE: "HIVE",
                 displayName: posting_json_metadata.profile?.name,
-                description: posting_json_metadata.profile?.about,
+                about: posting_json_metadata.profile?.about,
                 location: posting_json_metadata.profile?.location,
                 website: posting_json_metadata.profile?.website,
                 "extra.pinned_post": posting_json_metadata.profile?.pinned,
