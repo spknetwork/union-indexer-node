@@ -58,7 +58,7 @@ export class IndexerApiModule {
       },
     })
  
-    app.use('/api/v2/graphql', yoga)
+    app.use('/api/v1/graphql', yoga)
     // Pass it into a server to hook into request handlers.
 
     app.enableShutdownHooks()
