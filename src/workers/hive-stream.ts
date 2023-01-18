@@ -148,12 +148,13 @@ void (async () => {
     // }
     // postsBulkWrite = posts.initializeUnorderedBulkOp()
     console.log("RUNNING BULK WRITE")
-    
-    const postsPromise = posts.bulkWrite(bulkWritePosts)
-    
-    bulkWritePosts = []
-
-    await postsPromise;
+    if(bulkWritePosts.length > 0) {
+      const postsPromise = posts.bulkWrite(bulkWritePosts)
+      
+      bulkWritePosts = []
+  
+      await postsPromise;
+    }
 
     await hiveStreamState.findOneAndUpdate(
       {
@@ -195,125 +196,79 @@ void (async () => {
         // }
        
         for (let op of tx.operations) {
-
-          if(op[0] === "vote") {
-            const vote_op = op[1]
-            bulkWritePosts.push({
-              updateOne: {
-                filter: {
-                  author: vote_op.author,
-                  permlink: vote_op.permlink,
-                },
-                update: {
-                  $set: {
-                    need_stat_update: true
+          try {
+            if(op[0] === "vote") {
+              const vote_op = op[1]
+              bulkWritePosts.push({
+                updateOne: {
+                  filter: {
+                    author: vote_op.author,
+                    permlink: vote_op.permlink,
+                  },
+                  update: {
+                    $set: {
+                      need_stat_update: true
+                    }
                   }
                 }
-              }
-            })
-            // const post = await posts.findOne({
-            //   author: vote_op.author,
-            //   permlink: vote_op.permlink,
-            // })
-            // postsBulkWrite.find({
-            //   author: vote_op.author,
-            //   permlink: vote_op.permlink,
-            // }).updateOne({
-            //   $set: {
-            //     need_stat_update: true
-            //   }
-            // })
-            // if(post) {
-            //   await posts.findOneAndUpdate({
-            //     _id: post._id
-            //   }, {
-            //     $set: {
-            //       need_stat_update: true
-            //     }
-            //   })
-            // }
-          }
-          if(op[0] === "custom_json") {
-            const {id, json: json_raw} = op[1];
-            
-            if(id === "spk.bridge_id") {
-              const json = JSON.parse(json_raw)
-              console.log(json, id)
-              
-              const post = await posts.findOne({
-                author: json.author,
-                permlink: json.permlink
               })
-              if(post) {
-                await posts.findOneAndUpdate({
-                  _id: post._id
-                }, {
-                  $set: {
-                    needs_stream_id: true
-                  }
-                })
-              }
+              // const post = await posts.findOne({
+              //   author: vote_op.author,
+              //   permlink: vote_op.permlink,
+              // })
+              // postsBulkWrite.find({
+              //   author: vote_op.author,
+              //   permlink: vote_op.permlink,
+              // }).updateOne({
+              //   $set: {
+              //     need_stat_update: true
+              //   }
+              // })
+              // if(post) {
+              //   await posts.findOneAndUpdate({
+              //     _id: post._id
+              //   }, {
+              //     $set: {
+              //       need_stat_update: true
+              //     }
+              //   })
+              // }
             }
-            if(id === "community") {
-              const json = JSON.parse(json_raw)
-
-              const account = op[1].required_posting_auths[0]
+            if(op[0] === "custom_json") {
+              const {id, json: json_raw} = op[1];
               
-              if(json[0] === "subscribe") { 
-                try {
-                  await followsDb.findOneAndUpdate({
-                    _id: `hive-${account}-${json[1].community}`
+              if(id === "spk.bridge_id") {
+                const json = JSON.parse(json_raw)
+                console.log(json, id)
+                
+                const post = await posts.findOne({
+                  author: json.author,
+                  permlink: json.permlink
+                })
+                if(post) {
+                  await posts.findOneAndUpdate({
+                    _id: post._id
                   }, {
                     $set: {
-                      follower: account,
-                      following: json[1].community,
-                      what: 'community',
-                      followed_at: new Date(block.timestamp)
+                      needs_stream_id: true
                     }
-                  }, {
-                    upsert: true,
-                    retryWrites: true
                   })
-                } catch {
-
                 }
               }
-              if(json[0] === "unsubscribe") {
-                await followsDb.findOneAndDelete({
-                  _id: `hive-${account}-${json[1].community}`
-                })
-              }
-              if(json[0] === "updateProps") {
-                await communityDb.findOneAndUpdate({
-                  _id: `hive/${account}`
-                }, {
-                  $set: {
-                    title: json.title,
-                    about: json.about
-                  }
-                })
-              }
-            }
-            if(id === "spk.follow") {
-              //TODO: Implement spk following of offchain accounts
-            }
-            if(id === 'follow') {
-              const json = JSON.parse(json_raw)
-              if(json[0] === "follow") {
+              if(id === "community") {
+                const json = JSON.parse(json_raw)
+  
                 const account = op[1].required_posting_auths[0]
-                if(account !== json[1].follower) {
-                  continue;
-                }
-                const followed = json[1].what.length >= 1
-                if(followed) {
+                
+                if(json[0] === "subscribe") { 
                   try {
                     await followsDb.findOneAndUpdate({
-                      _id: `hive-${json[1].follower}-${json[1].following}`
+                      _id: `hive-${account}-${json[1].community}`
                     }, {
                       $set: {
-                        follower: json[1].follower,
-                        following: json[1].following,
-                        what: json[1].what,
+                        follower: account,
+                        following: json[1].community,
+                        what: 'community',
                         followed_at: new Date(block.timestamp)
                       }
                     }, {
@@ -321,179 +276,236 @@ void (async () => {
                       retryWrites: true
                     })
                   } catch {
-
+  
                   }
-                } else {
+                }
+                if(json[0] === "unsubscribe") {
                   await followsDb.findOneAndDelete({
-                    _id: `hive-${json[1].follower}-${json[1].following}`
+                    _id: `hive-${account}-${json[1].community}`
+                  })
+                }
+                if(json[0] === "updateProps") {
+                  await communityDb.findOneAndUpdate({
+                    _id: `hive/${account}`
+                  }, {
+                    $set: {
+                      title: json[1].title,
+                      about: json[1].about
+                    }
                   })
                 }
               }
+              if(id === "spk.follow") {
+                //TODO: Implement spk following of offchain accounts
+              }
+              if(id === 'follow') {
+                let json
+                try {
+                  json = JSON.parse(json_raw)
+                } catch {
+                  continue;
+                }
+                if(json[0] === "follow") {
+                  const account = op[1].required_posting_auths[0]
+                  if(account !== json[1].follower) {
+                    continue;
+                  }
+                  const followed = json[1].what.length >= 1
+                  if(followed) {
+                    try {
+                      await followsDb.findOneAndUpdate({
+                        _id: `hive-${json[1].follower}-${json[1].following}`
+                      }, {
+                        $set: {
+                          follower: json[1].follower,
+                          following: json[1].following,
+                          what: json[1].what,
+                          followed_at: new Date(block.timestamp)
+                        }
+                      }, {
+                        upsert: true,
+                        retryWrites: true
+                      })
+                    } catch {
+  
+                    }
+                  } else {
+                    await followsDb.findOneAndDelete({
+                      _id: `hive-${json[1].follower}-${json[1].following}`
+                    })
+                  }
+                }
+              }
             }
-          }
-          if(op[0] === 'account_update2') {
-            const profileData = op[1]
-            const posting_json_metadata = JSON.parse(profileData.posting_json_metadata)
-            // console.log('baden baden', posting_json_metadata)
-            // console.log(tx.operations, tx)
-            if(!posting_json_metadata.profile) {
-              continue;
-            }
-            if(profileData.account.startsWith('hive-')) {
-              await communityDb.findOneAndUpdate({
+            if(op[0] === 'account_update2') {
+              const profileData = op[1]
+              const posting_json_metadata = JSON.parse(profileData.posting_json_metadata)
+              // console.log('baden baden', posting_json_metadata)
+              // console.log(tx.operations, tx)
+              if(!posting_json_metadata.profile) {
+                continue;
+              }
+              if(profileData.account.startsWith('hive-')) {
+                await communityDb.findOneAndUpdate({
+                  _id: `hive/${profileData.account}`
+                }, {
+                  $set: {
+                    username: profileData.account,
+                    TYPE: "HIVE",                  
+                    "images.avatar": posting_json_metadata.profile?.profile_image,
+                    "images.cover": posting_json_metadata.profile?.cover_image,
+                    "topics": posting_json_metadata.profile?.topcs || [],
+                  }
+                }, {
+                  upsert: true,
+                  retryWrites: true
+                })
+                continue;
+              }
+              await hiveProfiles.findOneAndUpdate({
                 _id: `hive/${profileData.account}`
               }, {
                 $set: {
                   username: profileData.account,
-                  TYPE: "HIVE",                  
+                  TYPE: "HIVE",
+                  displayName: posting_json_metadata.profile?.name,
+                  about: posting_json_metadata.profile?.about,
+                  location: posting_json_metadata.profile?.location,
+                  website: posting_json_metadata.profile?.website,
+                  "extra.pinned_post": posting_json_metadata.profile?.pinned,
                   "images.avatar": posting_json_metadata.profile?.profile_image,
                   "images.cover": posting_json_metadata.profile?.cover_image,
-                  "topics": posting_json_metadata.profile?.topcs,
+                  "did": posting_json_metadata.did,
                 }
               }, {
                 upsert: true,
                 retryWrites: true
               })
-              continue;
             }
-            await hiveProfiles.findOneAndUpdate({
-              _id: `hive/${profileData.account}`
-            }, {
-              $set: {
-                username: profileData.account,
-                TYPE: "HIVE",
-                displayName: posting_json_metadata.profile?.name,
-                about: posting_json_metadata.profile?.about,
-                location: posting_json_metadata.profile?.location,
-                website: posting_json_metadata.profile?.website,
-                "extra.pinned_post": posting_json_metadata.profile?.pinned,
-                "images.avatar": posting_json_metadata.profile?.profile_image,
-                "images.cover": posting_json_metadata.profile?.cover_image,
-                "did": posting_json_metadata.did,
+            if (op[0] === 'comment') {
+              let json_metadata
+              let tags
+              try {
+                json_metadata = JSON.parse(op[1].json_metadata)
+                tags = json_metadata.tags
+              } catch {
+                json_metadata = op[1].json_metadata
               }
-            }, {
-              upsert: true,
-              retryWrites: true
-            })
-          }
-          if (op[0] === 'comment') {
-            let json_metadata
-            let tags
-            try {
-              json_metadata = JSON.parse(op[1].json_metadata)
-              tags = json_metadata.tags
-            } catch {
-              json_metadata = op[1].json_metadata
-            }
-            const typye = detectPostType({
-              ...op[1],
-              json_metadata,
-            })
-            //console.log(typye)
-  
-            //console.log(typye.type)
-            //console.log(ALLOWED_APPS.includes(typye.type))
-            const { parent_author, parent_permlink, author, permlink } = op[1]
-  
-            //Parses posts that belong to a parent of interesting content.
-            let allowed_by_parent = false
-            let allowed_by_type = ALLOWED_APPS.includes(typye.type);
-            if (parent_permlink !== '') {
-              const parentPost = await posts.findOne({
-                author: parent_author,
-                permlink: parent_permlink,
+              const typye = detectPostType({
+                ...op[1],
+                json_metadata,
               })
-              if (parentPost) {
-                allowed_by_parent = true
-              }
-            }
-            //If parent then do not continue
-            if (!ALLOWED_APPS.includes(typye.type) && !allowed_by_parent) {
-              return;
-            }
-  
-            const alreadyExisting = await posts.findOne({
-              parent_author,
-              parent_permlink,
-              author,
-              permlink,
-            })
-            if (alreadyExisting) {
-              //Ensure state can ONLY go foward
-              if (alreadyExisting.state_control.block_height < block_height) {
-                //TODO: more safety on updating already existing records. Cleanse fields
-                const patch = op[1].body
-                var dmp = new DiffMatchPatch();
-  
-                let body;
-                try {
-                  body = dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body)[0]
-                } catch {
-                  body = patch
+              //console.log(typye)
+    
+              //console.log(typye.type)
+              //console.log(ALLOWED_APPS.includes(typye.type))
+              const { parent_author, parent_permlink, author, permlink } = op[1]
+    
+              //Parses posts that belong to a parent of interesting content.
+              let allowed_by_parent = false
+              let allowed_by_type = ALLOWED_APPS.includes(typye.type);
+              if (parent_permlink !== '') {
+                const parentPost = await posts.findOne({
+                  author: parent_author,
+                  permlink: parent_permlink,
+                })
+                if (parentPost) {
+                  allowed_by_parent = true
                 }
-
-                
-                postsBulkWrite.find({
-                  _id: alreadyExisting._id
-                }).updateOne({
-                  $set: {
+              }
+              //If parent then do not continue
+              if (!ALLOWED_APPS.includes(typye.type) && !allowed_by_parent) {
+                continue;
+              }
+    
+              const alreadyExisting = await posts.findOne({
+                parent_author,
+                parent_permlink,
+                author,
+                permlink,
+              })
+              if (alreadyExisting) {
+                //Ensure state can ONLY go foward
+                if (alreadyExisting.state_control.block_height < block_height) {
+                  //TODO: more safety on updating already existing records. Cleanse fields
+                  const patch = op[1].body
+                  var dmp = new DiffMatchPatch();
+    
+                  let body;
+                  try {
+                    body = dmp.patch_apply(dmp.patch_fromText(patch), alreadyExisting.body)[0]
+                  } catch {
+                    body = patch
+                  }
+  
+                  
+                  postsBulkWrite.find({
+                    _id: alreadyExisting._id
+                  }).updateOne({
+                    $set: {
+                      ...op[1],
+                      body,
+                      json_metadata,
+                      "state_control.block_height": block_height,
+                      tags,
+                      updated_at: new Date(block.timestamp),
+                      TYPE: 'HIVE',
+                      metadata_status: 'unprocessed'
+                    },
+                  })
+                  // await posts.findOneAndUpdate({
+                  //   _id: alreadyExisting._id
+                  // }, {
+                  // })
+                }
+              } else {
+                //If post does not exist
+                try {
+                  //TODO: more safety on updating already existing records. Cleanse fields
+                  
+                  postsBulkWrite.insert({
                     ...op[1],
-                    body,
+                    status: 'published',
                     json_metadata,
-                    "state_control.block_height": block_height,
+                    state_control: {
+                      block_height: block_height,
+                    },
+                    origin_control: {
+                      allowed_by_parent,
+                      allowed_by_type
+                    },
                     tags,
+                    created_at: new Date(block.timestamp),
                     updated_at: new Date(block.timestamp),
                     TYPE: 'HIVE',
                     metadata_status: 'unprocessed'
-                  },
-                })
-                // await posts.findOneAndUpdate({
-                //   _id: alreadyExisting._id
-                // }, {
-                // })
-              }
-            } else {
-              //If post does not exist
-              try {
-                //TODO: more safety on updating already existing records. Cleanse fields
-                
-                postsBulkWrite.insert({
-                  ...op[1],
-                  json_metadata,
-                  state_control: {
-                    block_height: block_height,
-                  },
-                  origin_control: {
-                    allowed_by_parent,
-                    allowed_by_type
-                  },
-                  tags,
-                  created_at: new Date(block.timestamp),
-                  updated_at: new Date(block.timestamp),
-                  TYPE: 'HIVE',
-                  metadata_status: 'unprocessed'
-                })
-                // await posts.insertOne({
-                //   ...op[1],
-                //   json_metadata,
-                //   state_control: {
-                //     block_height: block_height,
-                //   },
-                //   origin_control: {
-                //     allowed_by_parent,
-                //     allowed_by_type
-                //   },
-                //   tags,
-                //   created_at: new Date(block.timestamp),
-                //   updated_at: new Date(block.timestamp),
-                //   TYPE: 'HIVE',
-                //   metadata_status: 'unprocessed'
-                // })
-              } catch (ex) {
-                console.log(ex)
+                  })
+                  // await posts.insertOne({
+                  //   ...op[1],
+                  //   json_metadata,
+                  //   state_control: {
+                  //     block_height: block_height,
+                  //   },
+                  //   origin_control: {
+                  //     allowed_by_parent,
+                  //     allowed_by_type
+                  //   },
+                  //   tags,
+                  //   created_at: new Date(block.timestamp),
+                  //   updated_at: new Date(block.timestamp),
+                  //   TYPE: 'HIVE',
+                  //   metadata_status: 'unprocessed'
+                  // })
+                } catch (ex) {
+                  console.log(ex)
+                }
               }
             }
+
+          } catch (ex) {
+            console.log(ex)
           }
+
         }
       }))
       busy = false;
