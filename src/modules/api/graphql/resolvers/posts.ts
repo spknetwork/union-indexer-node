@@ -1,7 +1,12 @@
 import Axios from 'axios'
+import moment from 'moment'
 import { HiveClient, OFFCHAIN_HOST } from "../../../../utils"
 import { indexerContainer } from '../../index'
 import { HiveProfile } from "./profiles"
+
+export class CeramicPost {
+
+}
 
 export class Post {
     rawDoc: any
@@ -47,7 +52,8 @@ export class Post {
     }
   
     get refs() {
-      return this.rawDoc.refs
+      //TODO: Calculate refs on DB backend. Maybe through JS or aggregate function
+      return [`hive:${this.author}:${this.permlink}`]
     }
   
     get tags() {
@@ -66,12 +72,16 @@ export class Post {
       return this.rawDoc.json_metadata.app
     }
   
-    get post_type() {
-      return this.rawDoc.post_type
-    }
-    
     get off_chain_id() {
       return this.rawDoc.off_chain_id
+    }
+
+    get post_type() {
+      if(this.rawDoc.json_metadata.app.startsWith('3speak/')) {
+        return "3speakvideo"
+      } else {
+        return "hive_post"
+      }
     }
   
     get __typename() {
@@ -80,6 +90,20 @@ export class Post {
       }
       if(this.rawDoc.TYPE === "CERAMIC") {
           return 'CeramicPost'
+      }
+    }
+
+    get lang() {
+      //TODO: grab lang from metadata
+      console.log(this.rawDoc.json_metadata)
+      return null;
+    }
+
+    get community_ref() {
+      if(this.parent_permlink.startsWith('hive-')) {
+        return this.parent_permlink
+      } else {
+        return null;
       }
     }
   
@@ -100,9 +124,11 @@ export class Post {
   
         const possible_play_url = (this.rawDoc.json_metadata?.video?.info?.sourceMap || []).find(e => e.type === "video")?.url
   
-        //console.log('possible_play_url', possible_play_url)
+        console.log('possible_play_url', possible_play_url, images)
+        
+        const thumbnail_url = `https://media.3speak.tv/${this.permlink}/thumbnails/default.png`
         return {
-            thumbnail_url: images.pop(),
+            thumbnail_url: images.pop() || thumbnail_url,
             play_url: possible_play_url ? possible_play_url : `https://threespeakvideo.b-cdn.net/${this.rawDoc.permlink}/default.m3u8`,
             duration: json_metadata.video.info.duration
         }
@@ -208,15 +234,227 @@ export class Post {
     }
     
     async community() {
-      const permink = this.parent_permlink;
-      if(permink.startsWith('hive-')) {
+      const permlink = this.parent_permlink;
+      if(permlink.startsWith('hive-')) {
           const communityInfo = await HiveClient.call('bridge', 'get_community', {
-              name: permink
+              name: permlink
           })
-  
+
+          const communityDb = await indexerContainer.self.communityDb.findOne({
+            _id: `hive/${permlink}`
+          })
+          console.log('communityDb', communityDb)
           return communityInfo
       } else {
-          return;
+          return null;
       }
     }
   }
+
+export const PostResolvers = {
+  async relatedPosts(_, args) {
+    const postContent = await indexerContainer.self.posts.findOne({
+      permlink: args.permlink,
+      author: args.author
+    });
+    console.log(postContent.tags)
+    let OrQuery = []
+
+    OrQuery.push({
+      tags: {$in: postContent.tags} 
+    })
+    
+    if(postContent.parent_author === "") {
+      OrQuery.push({
+        parent_permlink: postContent.parent_permlink
+      })
+    }
+    
+    const items = await indexerContainer.self.posts.aggregate([{
+      $match: {
+        $or: OrQuery
+        
+      }
+    }, {
+      $sample: {
+        size: 25
+      }
+    }]).toArray()
+
+    return {
+      parentPost: new Post(postContent),
+      items: items.map(e => new Post(e))
+    }
+  },
+  async socialPost(_, args) {
+    let mongodbQuery = {
+
+    }
+    
+    if(args.author) {
+      mongodbQuery['author'] = args.author;
+    }
+    if(args.permlink) {
+      mongodbQuery['permlink'] = args.permlink;
+    }
+    return new Post(await indexerContainer.self.posts.findOne(mongodbQuery))
+  },
+  async followingFeed(args: any) {
+    let following = []
+    if(args.follower.startsWith("did:")) {
+      const { data } = await Axios.post(OFFCHAIN_HOST, {
+        query: `
+        query Query($follower: String){
+          publicFeed(parent_id: $parent_id) {
+            stream_id
+            version_id
+            parent_id
+            creator_id
+            title
+            body
+            category
+            lang
+            type
+            app
+            json_metadata
+            app_metadata
+            debug_metadata
+            community_ref
+            created_at
+            updated_at
+          } 
+        }`,
+        variables: {
+          follower: args.follower,
+        },
+      })
+
+    } else {
+      const data = await HiveClient.database.call('get_following', [
+        args.follower
+      ])
+
+      data.map(e => {
+        following.push(e.following)
+      })
+    }
+
+    const out = await indexerContainer.self.posts.find({
+      author: {
+        $in: following
+      }
+    }, {
+      limit: args.limit || 100,
+      skip: args.skip,
+      sort: {
+        "created_at": -1
+      },
+    }).toArray()
+
+    return {
+      items: out.map(e => {
+        return new Post(e)
+      })
+    }
+  },
+  async latestFeed(_, args: any) {
+    const mongodbQuery = {
+        //"TYPE": "CERAMIC"
+    }
+    if (args.parent_permlink) {
+      mongodbQuery['parent_permlink'] = args.parent_permlink
+    }
+    if (args.author) {
+      mongodbQuery['author'] = args.author
+    }
+    if (args.permlink) {
+      mongodbQuery['permlink'] = args.permlink
+    }
+    if(!args.allow_comments) {
+        mongodbQuery['parent_author'] = {
+            $in: ["", null]
+        }
+    }
+    if(args.apps) {
+      mongodbQuery['json_metadata.app'] = {
+        $in: args.apps
+      }
+    }
+    console.log(mongodbQuery)
+    return {
+      items: (
+        await indexerContainer.self.posts
+          .find(mongodbQuery, {
+            limit: args.limit || 100,
+            skip: args.skip,
+            sort: {
+                created_at: -1
+            }
+          })
+          .toArray()
+      ).map((e) => {
+        return new Post(e)
+      }),
+    }
+  },
+  async trendingFeed(args: any) {
+    const mongodbQuery = {
+      //"TYPE": "CERAMIC"
+      created_at: {
+        $gt: moment().subtract('7', 'day').toDate()
+      }
+    }
+    if(!args.allow_comments) {
+        mongodbQuery['parent_author'] = {
+            $in: ["", null]
+        }
+    }
+    if(args.apps) {
+      mongodbQuery['json_metadata.app'] = {
+        $in: args.apps
+      }
+    }
+    return {
+      items: (
+        await indexerContainer.self.posts
+          .find(mongodbQuery, {
+            limit: args.limit || 100,
+            skip: args.skip,
+            sort: {
+              "stats.num_comments": -1
+            }
+          })
+          .toArray()
+      ).map((e) => {
+        return new Post(e)
+      }),
+    }
+  }, 
+  async publicFeed(args: any) {
+    const mongodbQuery = {}
+    if (args.parent_permlink) {
+      mongodbQuery['parent_permlink'] = args.parent_permlink
+    }
+    if (args.author) {
+      mongodbQuery['author'] = args.author
+    }
+    if (args.permlink) {
+      mongodbQuery['permlink'] = args.permlink
+    }
+    if(args.apps) {
+      mongodbQuery['json_metadata.app'] = {
+        $in: args.apps
+      }
+    }
+    return {
+      items: (
+        await indexerContainer.self.posts
+          .find(mongodbQuery, {
+            limit: args.limit || 100,
+            skip: args.skip,
+          })
+          .toArray()
+      ).map((e) => new Post(e)),
+    }
+  },
+}

@@ -1,18 +1,25 @@
 import { indexerContainer } from "../../index";
 
+export class CeramicProfile {
+    rawBlob: any;
+
+    static async run() {
+
+    }
+}
+
 export class HiveProfile {
     rawBlob: any;
     constructor(rawBlob) {
         this.rawBlob = rawBlob;
     }
 
-
     get location() {
         return this.rawBlob.location || null
     }
 
     get name() {
-        return this.rawBlob.name || null
+        return this.rawBlob.displayName || null
     }
 
     get username() {
@@ -24,7 +31,7 @@ export class HiveProfile {
     }
 
     get website() {
-        return this.rawBlob.posting_json_metadata?.profile?.website || null
+        return this.rawBlob.website || null
     }
 
     get json_metadata() {
@@ -38,13 +45,32 @@ export class HiveProfile {
     get images() {
       return {
         avatar: this.rawBlob.images.avatar,
-        background: this.rawBlob.images.background
+        cover: this.rawBlob.images.cover
       }
     }
+
+    //Basic identification
+
+    get id() {
+        return this.rawBlob['_id']
+    }
+
+    get did() {
+        return this.rawBlob.did;
+    }
     
+    //Data typing
     get __typename() {
         return "HiveProfile"
     }
+    
+    
+        get src() {
+            return this.rawBlob.TYPE
+        }
+        
+
+    
 
     static async run(args) {
 
@@ -72,6 +98,12 @@ export class HiveProfile {
         //     } catch {
         //     }
         // }
+
+        console.log('account data', account)
+
+        if(!account) {
+            return null;
+        }
 
         return new HiveProfile(account);
     }

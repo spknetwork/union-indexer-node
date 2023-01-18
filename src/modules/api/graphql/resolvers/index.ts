@@ -1,9 +1,8 @@
-import GraphQLJSON from 'graphql-type-json'
 import { indexerContainer } from '../..'
 import {HiveClient, OFFCHAIN_HOST} from '../../../../utils'
 import Axios from 'axios'
 import moment from 'moment';
-import { Post } from './posts';
+import { Post, PostResolvers } from './posts';
 import { HiveProfile } from './profiles';
 
 
@@ -45,167 +44,8 @@ class CeramicProfile {
 }
 
 export const Resolvers = {
-  JSON: GraphQLJSON,
-  async publicFeed(args: any) {
-    const mongodbQuery = {}
-    if (args.parent_permlink) {
-      mongodbQuery['parent_permlink'] = args.parent_permlink
-    }
-    if (args.author) {
-      mongodbQuery['author'] = args.author
-    }
-    if (args.permlink) {
-      mongodbQuery['permlink'] = args.permlink
-    }
-    if(args.apps) {
-      mongodbQuery['json_metadata.app'] = {
-        $in: args.apps
-      }
-    }
-    return {
-      items: (
-        await indexerContainer.self.posts
-          .find(mongodbQuery, {
-            limit: args.limit || 100,
-            skip: args.skip,
-          })
-          .toArray()
-      ).map((e) => new Post(e)),
-    }
-  },
-  async latestFeed(args: any) {
-    const mongodbQuery = {
-        //"TYPE": "CERAMIC"
-    }
-    if (args.parent_permlink) {
-      mongodbQuery['parent_permlink'] = args.parent_permlink
-    }
-    if (args.author) {
-      mongodbQuery['author'] = args.author
-    }
-    if (args.permlink) {
-      mongodbQuery['permlink'] = args.permlink
-    }
-    if(!args.allow_comments) {
-        mongodbQuery['parent_author'] = {
-            $in: ["", null]
-        }
-    }
-    if(args.apps) {
-      mongodbQuery['json_metadata.app'] = {
-        $in: args.apps
-      }
-    }
-    console.log(mongodbQuery)
-    return {
-      items: (
-        await indexerContainer.self.posts
-          .find(mongodbQuery, {
-            limit: args.limit || 100,
-            skip: args.skip,
-            sort: {
-                created_at: -1
-            }
-          })
-          .toArray()
-      ).map((e) => {
-        return new Post(e)
-      }),
-    }
-  },
-  async trendingFeed(args: any) {
-    const mongodbQuery = {
-      //"TYPE": "CERAMIC"
-      created_at: {
-        $gt: moment().subtract('7', 'day').toDate()
-      }
-    }
-    if(!args.allow_comments) {
-        mongodbQuery['parent_author'] = {
-            $in: ["", null]
-        }
-    }
-    if(args.apps) {
-      mongodbQuery['json_metadata.app'] = {
-        $in: args.apps
-      }
-    }
-    return {
-      items: (
-        await indexerContainer.self.posts
-          .find(mongodbQuery, {
-            limit: args.limit || 100,
-            skip: args.skip,
-            sort: {
-              "stats.num_comments": -1
-            }
-          })
-          .toArray()
-      ).map((e) => {
-        return new Post(e)
-      }),
-    }
-  }, 
-  async followingFeed(args: any) {
-    let following = []
-    if(args.follower.startsWith("did:")) {
-      const { data } = await Axios.post(OFFCHAIN_HOST, {
-        query: `
-        query Query($follower: String){
-          publicFeed(parent_id: $parent_id) {
-            stream_id
-            version_id
-            parent_id
-            creator_id
-            title
-            body
-            category
-            lang
-            type
-            app
-            json_metadata
-            app_metadata
-            debug_metadata
-            community_ref
-            created_at
-            updated_at
-          } 
-        }`,
-        variables: {
-          follower: args.follower,
-        },
-      })
-
-    } else {
-      const data = await HiveClient.database.call('get_following', [
-        args.follower
-      ])
-
-      data.map(e => {
-        following.push(e.following)
-      })
-    }
-
-    const out = await indexerContainer.self.posts.find({
-      author: {
-        $in: following
-      }
-    }, {
-      limit: args.limit || 100,
-      skip: args.skip,
-      sort: {
-        "created_at": -1
-      },
-    }).toArray()
-
-    return {
-      items: out.map(e => {
-        return new Post(e)
-      })
-    }
-  },
-  async profile(args) {
-    
+  ...PostResolvers,
+  async profile(_, args) {
     if(args.username) {
         return await HiveProfile.run({
             username: args.username
@@ -213,19 +53,6 @@ export const Resolvers = {
     }
 
     return null
-  },
-  async socialPost(args) {
-    let mongodbQuery = {
-
-    }
-    
-    if(args.author) {
-      mongodbQuery['author'] = args.author;
-    }
-    if(args.permlink) {
-      mongodbQuery['permlink'] = args.permlink;
-    }
-    return new Post(await indexerContainer.self.posts.findOne(mongodbQuery))
   },
   async syncState() {
     const currentStats = await indexerContainer.self.stats.findOne({
@@ -238,7 +65,7 @@ export const Resolvers = {
       latestBlockLagDiff: currentStats.blockLagDiff,
     }
   },
-  async trendingTags(args: any) {
+  async trendingTags(_, args: any) {
     const tagsQuery = await indexerContainer.self.posts.aggregate([
       {
         '$match': {
@@ -281,47 +108,13 @@ export const Resolvers = {
       tags
     }
   },
-  community: async (args) => {
+  async community(_, args) {
     const community = await indexerContainer.self.communityDb.findOne({
         _id: `hive/${args.id}`
     })
     console.log(community)
   },
-  relatedPosts: async (args) => {
-    const postContent = await indexerContainer.self.posts.findOne({
-      permlink: args.permlink,
-      author: args.author
-    });
-    console.log(postContent.tags)
-    let OrQuery = []
-
-    OrQuery.push({
-      tags: {$in: postContent.tags} 
-    })
-    
-    if(postContent.parent_author === "") {
-      OrQuery.push({
-        parent_permlink: postContent.parent_permlink
-      })
-    }
-    
-    const items = await indexerContainer.self.posts.aggregate([{
-      $match: {
-        $or: OrQuery
-        
-      }
-    }, {
-      $sample: {
-        size: 25
-      }
-    }]).toArray()
-
-    return {
-      parentPost: new Post(postContent),
-      items: items.map(e => new Post(e))
-    }
-  },
-  follows: async (args) => {
+  async follows(_, args) {
     const followingResult = await indexerContainer.self.followsDb.find({
       follower: args.id
     }).toArray()
@@ -331,8 +124,8 @@ export const Resolvers = {
 
     return {
       followers: followersResult.map(e => ({...e, followed_at: e.followed_at.toISOString(), 
-        follower_profile: async () => Resolvers.profile({username: e.follower}),
-        following_profile: async () => Resolvers.profile({username: e.following})
+        follower_profile: async () => Resolvers.profile(_, {username: e.follower}),
+        following_profile: async () => Resolvers.profile(_, {username: e.following})
       })),
       followers_count: async () => {
         return await indexerContainer.self.followsDb.countDocuments({
@@ -341,8 +134,8 @@ export const Resolvers = {
       },
       followings: followingResult.map(e => ({
         ...e, followed_at: e.followed_at.toISOString(), 
-        follower_profile: async () => {console.log('HLELO', await Resolvers.profile({username: e.follower})); return await Resolvers.profile({username: e.follower})},
-        following_profile: async () => Resolvers.profile({username: e.following})
+        follower_profile: async () => {console.log('HLELO', await Resolvers.profile(_, {username: e.follower})); return await Resolvers.profile(_, {username: e.follower})},
+        following_profile: async () => Resolvers.profile(_, {username: e.following})
       })),
       followings_count: async () => {
         return await indexerContainer.self.followsDb.countDocuments({

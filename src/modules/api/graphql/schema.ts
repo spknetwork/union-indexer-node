@@ -1,13 +1,15 @@
+import { JSONDefinition } from "graphql-scalars"
+
 export const Schema = `
-    scalar JSON
+    ${JSONDefinition}
     type ProfileImages {
         avatar: String
-        background: String
+        cover: String
     }
     interface BaseProfile {
         id: String 
         name: String
-        description: String
+        about: String
 
         src: String
     }
@@ -15,7 +17,7 @@ export const Schema = `
     type CeramicProfile implements BaseProfile {
         id: String 
         name: String
-        description: String
+        about: String
 
         did: String
         images: ProfileImages
@@ -29,13 +31,14 @@ export const Schema = `
         id: String 
         username: String
         name: String
-        description: String
+        about: String
 
         images: ProfileImages
         posting_json_metadata: String
         json_metadata: String
         website: String
         location: String
+        did: String
 
         src: String
     } 
