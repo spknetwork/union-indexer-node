@@ -4,8 +4,12 @@ import { mongo } from '../services/db'
 import { fastStream, HiveClient } from '../utils'
 import DiffMatchPatch from '@2toad/diff-match-patch'
 import Moment from 'moment'
+import { AnyBulkWriteOperation, Document } from 'mongodb'
 
 void (async () => {
+  
+  
+
   const db = mongo.db('spk-union-indexer')
   const hiveStreamState = db.collection('hive_stream_state')
   const posts = db.collection('posts')
@@ -48,6 +52,7 @@ void (async () => {
       console.log("HIT MEMORY LIMIT: STOPPING")
       process.exit(0)
     }
+    // process.mem
     await stats.findOneAndUpdate({
         key: "stats"
     }, {
@@ -100,31 +105,133 @@ void (async () => {
   str.startStream()
   let last_time;
 
+  let transactionsProcessed = 0; 
+  let busy = false
+  let lastStart
+  let lastFinish
+  let blockMS
+  let blockMSTotal = 0;
+  let blockMSCount = 0;
+
+
+  
+
+  setInterval(async() => {
+    const debug = str.debugFetch()
+    console.log('processed ', transactionsProcessed, busy, {
+      blockMS,
+      avgBlockMS: Math.round(blockMSTotal / blockMSCount),
+      blockMSCount,
+      BH: debug.parser_height,
+      idleThreads: debug.queue.pending,
+      blockMapSize: debug.blockMapSize,
+    })
+    transactionsProcessed = 0
+    blockMSTotal = 0;
+    blockMSCount = 0;
+
+    
+  }, 1000)
+  
+  let bulkWritePosts:Array<AnyBulkWriteOperation<Document>> = []
+  let bulkWriteFollows:Array<AnyBulkWriteOperation<Document>> = []
+  let bulkWriteProfiles:Array<AnyBulkWriteOperation<Document>> = []
+
+  setInterval(async () => {
+    // try {
+    //   if (postsBulkWrite.batches.length > 0) {
+    //     // console.log(postsBulkWrite.batches[0].operations, postsBulkWrite.batches.length)
+    //     await postsBulkWrite.execute()
+    //   }
+    // } catch (ex) {
+    //   console.log(ex)
+    // }
+    // postsBulkWrite = posts.initializeUnorderedBulkOp()
+    console.log("RUNNING BULK WRITE")
+    
+    const postsPromise = posts.bulkWrite(bulkWritePosts)
+    
+    bulkWritePosts = []
+
+    await postsPromise;
+
+    await hiveStreamState.findOneAndUpdate(
+      {
+        id: 'block_height',
+      },
+      {
+        $set: {
+          block_height: block_height_current,
+          last_time,
+        },
+      },
+      {
+          upsert: true
+      }
+    )
+  }, 2 * 1000)
   try {
     for await (let data of str.stream) {
       const [block_height, block] = data as any
       //console.log(block_height)
       block_height_current = block_height
 
-      last_time = new Date(block.timestamp);
+      try {
+        last_time = new Date(block.timestamp);
+      } catch(ex) {
+        console.log(block)
+        throw ex
+      }
+      transactionsProcessed = transactionsProcessed + block.transactions.length
+      busy = true
+      lastStart = new Date()
+
+
+      let postsBulkWrite = posts.initializeUnorderedBulkOp()
+      
       await Promise.all(block.transactions.map(async (tx: any) => {
+        // if(tx) {
+        //   return;
+        // }
+       
         for (let op of tx.operations) {
 
           if(op[0] === "vote") {
             const vote_op = op[1]
-            const post = await posts.findOne({
-              author: vote_op.author,
-              permlink: vote_op.permlink,
-            })
-            if(post) {
-              await posts.findOneAndUpdate({
-                _id: post._id
-              }, {
-                $set: {
-                  need_stat_update: true
+            bulkWritePosts.push({
+              updateOne: {
+                filter: {
+                  author: vote_op.author,
+                  permlink: vote_op.permlink,
+                },
+                update: {
+                  $set: {
+                    need_stat_update: true
+                  }
                 }
-              })
-            }
+              }
+            })
+            // const post = await posts.findOne({
+            //   author: vote_op.author,
+            //   permlink: vote_op.permlink,
+            // })
+            // postsBulkWrite.find({
+            //   author: vote_op.author,
+            //   permlink: vote_op.permlink,
+            // }).updateOne({
+            //   $set: {
+            //     need_stat_update: true
+            //   }
+            // })
+            // if(post) {
+            //   await posts.findOneAndUpdate({
+            //     _id: post._id
+            //   }, {
+            //     $set: {
+            //       need_stat_update: true
+            //     }
+            //   })
+            // }
           }
           if(op[0] === "custom_json") {
             const {id, json: json_raw} = op[1];
@@ -153,18 +260,23 @@ void (async () => {
               const account = op[1].required_posting_auths[0]
               
               if(json[0] === "subscribe") { 
-                await followsDb.findOneAndUpdate({
-                  _id: `hive-${account}-${json[1].community}`
-                }, {
-                  $set: {
-                    follower: account,
-                    following: json[1].community,
-                    what: 'community',
-                    followed_at: new Date(block.timestamp)
-                  }
-                }, {
-                  upsert: true
-                })
+                try {
+                  await followsDb.findOneAndUpdate({
+                    _id: `hive-${account}-${json[1].community}`
+                  }, {
+                    $set: {
+                      follower: account,
+                      following: json[1].community,
+                      what: 'community',
+                      followed_at: new Date(block.timestamp)
+                    }
+                  }, {
+                    upsert: true,
+                    retryWrites: true
+                  })
+                } catch {
+
+                }
               }
               if(json[0] === "unsubscribe") {
                 await followsDb.findOneAndDelete({
@@ -194,18 +306,23 @@ void (async () => {
                 }
                 const followed = json[1].what.length >= 1
                 if(followed) {
-                  await followsDb.findOneAndUpdate({
-                    _id: `hive-${json[1].follower}-${json[1].following}`
-                  }, {
-                    $set: {
-                      follower: json[1].follower,
-                      following: json[1].following,
-                      what: json[1].what,
-                      followed_at: new Date(block.timestamp)
-                    }
-                  }, {
-                    upsert: true
-                  })
+                  try {
+                    await followsDb.findOneAndUpdate({
+                      _id: `hive-${json[1].follower}-${json[1].following}`
+                    }, {
+                      $set: {
+                        follower: json[1].follower,
+                        following: json[1].following,
+                        what: json[1].what,
+                        followed_at: new Date(block.timestamp)
+                      }
+                    }, {
+                      upsert: true,
+                      retryWrites: true
+                    })
+                  } catch {
+
+                  }
                 } else {
                   await followsDb.findOneAndDelete({
                     _id: `hive-${json[1].follower}-${json[1].following}`
@@ -234,7 +351,8 @@ void (async () => {
                   "topics": posting_json_metadata.profile?.topcs,
                 }
               }, {
-                upsert: true
+                upsert: true,
+                retryWrites: true
               })
               continue;
             }
@@ -254,7 +372,8 @@ void (async () => {
                 "did": posting_json_metadata.did,
               }
             }, {
-              upsert: true
+              upsert: true,
+              retryWrites: true
             })
           }
           if (op[0] === 'comment') {
@@ -312,9 +431,11 @@ void (async () => {
                 } catch {
                   body = patch
                 }
-                await posts.findOneAndUpdate({
+
+                
+                postsBulkWrite.find({
                   _id: alreadyExisting._id
-                }, {
+                }).updateOne({
                   $set: {
                     ...op[1],
                     body,
@@ -326,12 +447,17 @@ void (async () => {
                     metadata_status: 'unprocessed'
                   },
                 })
+                // await posts.findOneAndUpdate({
+                //   _id: alreadyExisting._id
+                // }, {
+                // })
               }
             } else {
               //If post does not exist
               try {
                 //TODO: more safety on updating already existing records. Cleanse fields
-                await posts.insertOne({
+                
+                postsBulkWrite.insert({
                   ...op[1],
                   json_metadata,
                   state_control: {
@@ -347,6 +473,22 @@ void (async () => {
                   TYPE: 'HIVE',
                   metadata_status: 'unprocessed'
                 })
+                // await posts.insertOne({
+                //   ...op[1],
+                //   json_metadata,
+                //   state_control: {
+                //     block_height: block_height,
+                //   },
+                //   origin_control: {
+                //     allowed_by_parent,
+                //     allowed_by_type
+                //   },
+                //   tags,
+                //   created_at: new Date(block.timestamp),
+                //   updated_at: new Date(block.timestamp),
+                //   TYPE: 'HIVE',
+                //   metadata_status: 'unprocessed'
+                // })
               } catch (ex) {
                 console.log(ex)
               }
@@ -354,20 +496,20 @@ void (async () => {
           }
         }
       }))
-      await hiveStreamState.findOneAndUpdate(
-        {
-          id: 'block_height',
-        },
-        {
-          $set: {
-            block_height,
-            last_time,
-          },
-        },
-        {
-            upsert: true
+      busy = false;
+      blockMS = Date.now() - lastStart;
+      blockMSTotal = blockMS + blockMSTotal;
+      blockMSCount = blockMSCount + 1;
+      
+      try {
+        if (postsBulkWrite.batches.length > 0) {
+          // console.log(postsBulkWrite.batches[0].operations, postsBulkWrite.batches.length)
+          await postsBulkWrite.execute()
         }
-      )
+      } catch (ex) {
+        console.log(ex)
+      }
+      
     }
   } catch(ex) {
       console.log(ex)
