@@ -13,9 +13,27 @@ void (async () => {
   const communityDb = db.collection('communities')
   await mongo.connect()
 
-  // for (let creator of await posts.distinct('author', {
+  // const firstCreators =  await posts.distinct('author', {
   //   'json_metadata.app': { $regex: '3speak/' },
+  //   "video.first_upload": true
+  // })
+  // console.log('Number of first authors', firstCreators.length)
+  // for (let author of await posts.distinct('author', {
+  //   'json_metadata.app': { $regex: '3speak/' },
+  //   author: {$nin: firstCreators}
   // })) {
+  //   await posts.findOneAndUpdate({
+  //     'json_metadata.app': { $regex: '3speak/' },
+  //     author
+  //   }, {
+  //     $set: {
+  //       'video.first_upload': true
+  //     }
+  //   }, {
+  //     sort: {
+  //       created_at: 1
+  //     }
+  //   })
   //   // console.log(creator)
   // }
 

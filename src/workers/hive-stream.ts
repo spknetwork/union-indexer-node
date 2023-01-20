@@ -466,9 +466,43 @@ void (async () => {
                 //If post does not exist
                 try {
                   //TODO: more safety on updating already existing records. Cleanse fields
-                  
+
+
+                  const secondOperation = tx.operations[1];
+
+                  let beneficiaries = null
+                  if(secondOperation) {
+                    if(secondOperation[0] === "comment_options") {
+                      // console.log(secondOperation[1])
+                      const extensions = secondOperation[1].extensions
+
+                      const maybeBene = extensions[0]
+                      if(maybeBene) {
+                        const [op, payload] = maybeBene
+                        if(op === 'comment_payout_beneficiaries') {
+                          beneficiaries = payload.beneficiaries
+                        }
+                      }
+                    }
+                  }
+
+                  const calculatedMetadata = {}
+
+                  if(json_metadata.app.startsWith('3speak/')) {
+                    const alreadyExisting = await posts.findOne({
+                      author,
+                      "video.first_upload": true
+                    })
+                    if(!alreadyExisting) {
+                      calculatedMetadata['video'] = {
+                        first_upload: true
+                      }
+                    }
+                  }
+
                   postsBulkWrite.insert({
                     ...op[1],
+                    ...calculatedMetadata,
                     status: 'published',
                     json_metadata,
                     state_control: {
@@ -482,7 +516,8 @@ void (async () => {
                     created_at: new Date(block.timestamp),
                     updated_at: new Date(block.timestamp),
                     TYPE: 'HIVE',
-                    metadata_status: 'unprocessed'
+                    metadata_status: 'unprocessed',
+                    beneficiaries
                   })
                   // await posts.insertOne({
                   //   ...op[1],
