@@ -290,8 +290,11 @@ void (async () => {
                   }, {
                     $set: {
                       title: json[1].title,
-                      about: json[1].about
+                      about: json[1].about,
+                      needs_update: true
                     }
+                  }, {
+                    upsert: true
                   })
                 }
               }
@@ -355,6 +358,7 @@ void (async () => {
                     "images.avatar": posting_json_metadata.profile?.profile_image,
                     "images.cover": posting_json_metadata.profile?.cover_image,
                     "topics": posting_json_metadata.profile?.topcs || [],
+                    needs_update: true
                   }
                 }, {
                   upsert: true,

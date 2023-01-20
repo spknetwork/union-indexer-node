@@ -20,8 +20,10 @@ void (async () => {
   for (;;) {
     const items = await posts.find({
       $or: [{
+        "json_metadata.app": {$regex: '3speak'}, 
         need_stat_update: true
       }, {
+        "json_metadata.app": {$regex: '3speak'}, 
         need_stat_update: {
           $exists: false
         }
@@ -43,9 +45,10 @@ void (async () => {
             total_reward =
               Number(data.total_payout_value.split(' ')[0]) +
               Number(data.curator_payout_value.split(' ')[0])
-
             total_votes = data.net_votes
-          } catch {}
+          } catch(ex) {
+            // console.log(Object.values(ex.jse_info).join(), [itm.author, itm.permlink])
+          }
         }
 
         const num_comments = await posts.countDocuments({
