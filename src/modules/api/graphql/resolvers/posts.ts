@@ -94,8 +94,12 @@ export class Post {
     }
 
     get lang() {
-      //TODO: grab lang from metadata
       console.log(this.rawDoc.json_metadata)
+      if(this.rawDoc.json_metadata.video) {
+        if(this.rawDoc.json_metadata.video.info.lang) {
+          return this.rawDoc.json_metadata.video.info.lang;
+        }
+      }
       return null;
     }
 
@@ -130,7 +134,8 @@ export class Post {
         return {
             thumbnail_url: images.pop() || thumbnail_url,
             play_url: possible_play_url ? possible_play_url : `https://threespeakvideo.b-cdn.net/${this.rawDoc.permlink}/default.m3u8`,
-            duration: json_metadata.video.info.duration
+            duration: json_metadata.video.info.duration,
+            is_short: json_metadata.video.info.duration < 60
         }
     }
     
