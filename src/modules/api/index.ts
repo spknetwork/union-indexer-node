@@ -50,11 +50,19 @@ export class IndexerApiModule {
       schema,
       graphqlEndpoint: `/api/v1/graphql`,
       graphiql: {
-        defaultQuery: /* GraphQL */ `
-          query {
-            hello
-          }
-        `,
+        //NOTE: weird string is for formatting on UI to look OK
+        defaultQuery: /* GraphQL */ "" +
+          "query MyQuery {\n" +
+          " latestFeed(limit: 10) {\n" +
+          "   items {\n" +
+          "      ... on HivePost {\n" +
+          "        parent_permlink\n" +
+          "        parent_author\n" +
+          "        title\n" +
+          "        body\n" +
+          "      }\n" +
+          "    }\n"+
+          "  }\n"
       },
     })
  
