@@ -11,7 +11,6 @@ void (async () => {
     const communityDb = db.collection('communities')
     await mongo.connect()
 
-    
     for await(let communityRecord of communityDb.find({
         needs_update: true
     })) {
