@@ -3,7 +3,7 @@ set -e
 
 updateCode=$(git pull);
 
-if [ "$updateCode" == "Already up to date." ]
+if [[ "$updateCode" == "Already up to date." ]]
 then
   echo $updateCode
   exit
@@ -20,6 +20,8 @@ indexVersion=`cat deploy/index-flag`
 }
 echo "$indexVersion $indexVersionDeployed"
 
+docker-compose build
+docker-compose down
 
 if [ "$indexVersion" -ne "$indexVersionDeployed" ];
 then 
@@ -28,6 +30,5 @@ then
   echo $indexVersion > data/index-flag
 fi
 
-docker-compose build
-docker-compose down
+
 docker-compose up -d
