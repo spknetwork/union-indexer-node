@@ -2,7 +2,6 @@ import fs from 'fs/promises'
 import { HiveClient } from '../utils'
 import { mongo } from '../services/db'
 
-
 void (async () => {
     const db = mongo.db('spk-union-indexer')
     const hiveStreamState = db.collection('hive_stream_state')
