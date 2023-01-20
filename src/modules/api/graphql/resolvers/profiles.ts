@@ -108,3 +108,28 @@ export class HiveProfile {
         return new HiveProfile(account);
     }
 }
+
+
+export const ProfileResolvers = {
+    async leaderBoard() {
+        const activeProfiles = await indexerContainer.self.profileDb.find({
+            score: {$gt: 0}
+        }, {
+            sort: {
+                score: -1
+            }
+        }).toArray()
+
+        return {
+            items: activeProfiles.map((itm, index) => {
+                return {
+                    author: itm.username,
+                    author_profile: new HiveProfile(itm),
+                    score: itm.score,
+                    rank: index + 1
+                }
+            }),
+            total_active_creators: activeProfiles.length
+        }
+    }
+}

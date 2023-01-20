@@ -3,7 +3,7 @@ import {HiveClient, OFFCHAIN_HOST} from '../../../../utils'
 import Axios from 'axios'
 import moment from 'moment';
 import { Post, PostResolvers } from './posts';
-import { HiveProfile } from './profiles';
+import { HiveProfile, ProfileResolvers } from './profiles';
 
 
 const GRAPHQL_PROFILE = `
@@ -45,6 +45,7 @@ class CeramicProfile {
 
 export const Resolvers = {
   ...PostResolvers,
+  ...ProfileResolvers,
   async profile(_, args) {
     if(args.username) {
         return await HiveProfile.run({

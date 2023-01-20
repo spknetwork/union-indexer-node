@@ -207,6 +207,19 @@ export const Schema = `
         latestBlockLagDiff: Int
     }
 
+    type LeaderBoardEntry {
+        rank: Int
+        score: Float
+        author: String
+        author_profile: MergedProfile
+    }
+
+    type LeaderBoard {
+        items: [LeaderBoardEntry]
+        total_active_creators: Int
+
+    }
+
     type Query {
         publicFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         latestFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
@@ -223,5 +236,6 @@ export const Schema = `
         relatedPosts(permlink: String, author: String): FeedOutput
         community(id: String): CommunityOutput
         follows(id: String): FollowOverview
+        leaderBoard: LeaderBoard
     }
 `
