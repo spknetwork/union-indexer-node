@@ -462,4 +462,20 @@ export const PostResolvers = {
       ).map((e) => new Post(e)),
     }
   },
+  async tagFeed(args: any) {
+    return {
+      items: (
+        await indexerContainer.self.posts
+          .find({
+            tags: {
+              $in: [args.tag]
+            }
+          }, {
+            limit: args.limit || 100,
+            skip: args.skip,
+          })
+          .toArray()
+      ).map((e) => new Post(e)),
+    }
+  }
 }

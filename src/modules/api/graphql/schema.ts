@@ -221,10 +221,14 @@ export const Schema = `
     }
 
     type Query {
+
+        # Basic feeds
         publicFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         latestFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         trendingFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         followingFeed(follower: String, limit: Int, skip: Int): FeedOutput
+        tagFeed(tag: String, skip: Int, limit: Int): FeedOutput
+
 
         socialPost(author: String, permlink: String): MergedPost
 
