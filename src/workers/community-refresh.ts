@@ -14,6 +14,9 @@ void (async () => {
     for await(let communityRecord of communityDb.find({
         needs_update: true
     })) {
+        if(!communityRecord._id.toString().split('/')[1].startsWith('hive-')) {
+            continue;
+        }
         try {
             console.log(communityRecord._id.toString().split('/')[1])
             const communityInfo = await HiveClient.call('bridge', 'get_community', {
@@ -34,8 +37,8 @@ void (async () => {
                     needs_update: false
                 }
             })
-        } catch {
-
+        } catch (ex) {
+            console.log(ex)
         }
 
     }
