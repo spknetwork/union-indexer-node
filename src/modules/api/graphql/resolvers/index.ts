@@ -113,7 +113,31 @@ export const Resolvers = {
     const community = await indexerContainer.self.communityDb.findOne({
         _id: `hive/${args.id}`
     })
-    console.log(community)
+    const roles = community.roles.map(e => {
+      const [username, role, title] = e;
+      return {
+        username, 
+        role, 
+        title
+      }
+    })
+    return {
+      ...community,
+      roles,
+      created_at: community.created_at.toISOString(),
+      feed: async (_, args2) => {
+
+        const items = (await indexerContainer.self.posts.find({
+          parent_permlink: args.id
+        }, {
+          limit: args2.limit || 100,
+          skip: args2.skip || 0
+        }).toArray()).map(e => new Post(e))
+        return {
+          items
+        }
+      }
+    }
   },
   async follows(_, args) {
     const followingResult = await indexerContainer.self.followsDb.find({

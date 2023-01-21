@@ -194,10 +194,25 @@ export const Schema = `
         items: [MergedPost]
     }
 
+    type CommunityRole {
+        username: String
+        role: String
+        title: String
+    }
+
     type CommunityOutput {
         title: String
-        description: String
-        iamges: ProfileImages
+        # Communities can have both about and description
+        # About is usually a short summary
+        about: String
+        description: String 
+        subscribers: Int
+
+        created_at: String
+        lang: String
+        is_nsfw: Boolean
+        roles: [CommunityRole]
+        images: ProfileImages
         feed(limit: Int, skip: Int): FeedOutput
     }
 
@@ -217,7 +232,6 @@ export const Schema = `
     type LeaderBoard {
         items: [LeaderBoardEntry]
         total_active_creators: Int
-
     }
 
     type Query {
