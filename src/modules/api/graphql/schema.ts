@@ -242,6 +242,7 @@ export const Schema = `
         trendingFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         followingFeed(follower: String, limit: Int, skip: Int): FeedOutput
         tagFeed(tag: String, skip: Int, limit: Int): FeedOutput
+        firstUploadsFeeds(limit: Int, skip: Int): FeedOutput
 
 
         socialPost(author: String, permlink: String): MergedPost

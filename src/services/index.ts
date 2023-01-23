@@ -104,5 +104,19 @@ export class CoreService {
         } catch {
 
         }
+        try  {
+            await this.posts.createIndex({
+                "video.first_upload": -1,
+                "created_at": -1
+            }, {
+                partialFilterExpression: {
+                    "video.first_upload": {
+                        $exists: true
+                    }
+                }
+            })
+        } catch {
+
+        }
     }
 }

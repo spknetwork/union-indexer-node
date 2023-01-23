@@ -94,7 +94,6 @@ export class Post {
     }
 
     get lang() {
-      console.log(this.rawDoc.json_metadata)
       if(this.rawDoc.json_metadata.video) {
         if(this.rawDoc.json_metadata.video.info.lang) {
           return this.rawDoc.json_metadata.video.info.lang;
@@ -248,7 +247,7 @@ export class Post {
           const communityDb = await indexerContainer.self.communityDb.findOne({
             _id: `hive/${permlink}`
           })
-          console.log('communityDb', communityDb)
+          // console.log('communityDb', communityDb)
           return communityInfo
       } else {
           return null;
@@ -462,7 +461,7 @@ export const PostResolvers = {
       ).map((e) => new Post(e)),
     }
   },
-  async tagFeed(args: any) {
+  async tagFeed(_, args: any) {
     return {
       items: (
         await indexerContainer.self.posts
@@ -473,6 +472,38 @@ export const PostResolvers = {
           }, {
             limit: args.limit || 100,
             skip: args.skip,
+          })
+          .toArray()
+      ).map((e) => new Post(e)),
+    }
+  },
+  async firstUploadsFeeds(_, args: any) {
+    const explainResult = await indexerContainer.self.posts
+          .find({
+            "video.first_upload": {
+              $eq: true
+            }
+          }, {
+            limit: args.limit || 100,
+            skip: args.skip,
+            sort: {
+              created_at: -1
+            }
+          }).explain()
+    console.log(explainResult)
+    return {
+      items: (
+        await indexerContainer.self.posts
+          .find({
+            "video.first_upload": {
+              $eq: true
+            }
+          }, {
+            limit: args.limit || 100,
+            skip: args.skip,
+            sort: {
+              created_at: -1
+            }
           })
           .toArray()
       ).map((e) => new Post(e)),
