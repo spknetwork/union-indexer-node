@@ -478,19 +478,6 @@ export const PostResolvers = {
     }
   },
   async firstUploadsFeeds(_, args: any) {
-    const explainResult = await indexerContainer.self.posts
-          .find({
-            "video.first_upload": {
-              $eq: true
-            }
-          }, {
-            limit: args.limit || 100,
-            skip: args.skip,
-            sort: {
-              created_at: -1
-            }
-          }).explain()
-    console.log(explainResult)
     return {
       items: (
         await indexerContainer.self.posts
