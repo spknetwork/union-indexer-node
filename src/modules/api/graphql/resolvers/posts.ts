@@ -134,7 +134,9 @@ export class Post {
             thumbnail_url: images.pop() || thumbnail_url,
             play_url: possible_play_url ? possible_play_url : `https://threespeakvideo.b-cdn.net/${this.rawDoc.permlink}/default.m3u8`,
             duration: json_metadata.video.info.duration,
-            is_short: json_metadata.video.info.duration < 60
+            is_short: json_metadata.video.info.duration < 60,
+            //Body without HIVE post headers such as "Watch on 3Speak"
+            body: this.body.split('---\n\n')[1]
         }
     }
     
