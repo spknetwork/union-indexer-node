@@ -442,12 +442,19 @@ void (async () => {
                     body = patch
                   }
   
+                  let newStatus = "published"
+                  if(Array.isArray(json_metadata.flags)) {
+                    if(json_metadata.flags.includes('deleted')) {
+                      newStatus = 'deleted'
+                    }
+                  }
                   
                   postsBulkWrite.find({
                     _id: alreadyExisting._id
                   }).updateOne({
                     $set: {
                       ...op[1],
+                      status: newStatus,
                       body,
                       json_metadata,
                       "state_control.block_height": block_height,
