@@ -5,6 +5,7 @@ import { fastStream, HiveClient } from '../utils'
 import DiffMatchPatch from '@2toad/diff-match-patch'
 import Moment from 'moment'
 import { AnyBulkWriteOperation, Document } from 'mongodb'
+import { DelegatedAuthority } from '../types/index'
 
 void (async () => {
   
@@ -17,6 +18,7 @@ void (async () => {
   const hiveProfiles = db.collection('profiles')
   const followsDb = db.collection('follows')
   const communityDb = db.collection('communities')
+  const delegatedAuthorityDb = db.collection<DelegatedAuthority>('delegated-authority')
   await mongo.connect()
 
   const hiveState = await hiveStreamState.findOne({
@@ -340,6 +342,55 @@ void (async () => {
                 }
               }
             }
+            if(op[0] === "account_update") {
+              const updateOp = op[1]
+              if(updateOp.posting) {
+                if(updateOp.posting.account_auth) {
+                  const auths = await delegatedAuthorityDb.find({
+                    to: op[1].account
+                  }).toArray()
+                  for(let auth of auths) {{
+                    if(!updateOp.posting.account_auth.find(e => {
+                      if(CONFIG.delegated_posting_accounts[0] === "*") {
+                        return true;
+                      }
+                      return CONFIG.delegated_posting_accounts.includes(e.to) 
+                    })) {
+                      console.log('Deleting posting auth')
+                      //Need to delete the posting auth
+                      await delegatedAuthorityDb.deleteOne({
+                        type: "posting",
+                        to: auth[0],
+                        from: updateOp.account,
+                      })
+                    }
+                  }}
+  
+                  //Add posting auth to DB
+                  for(let auth of updateOp.posting.account_auths) {
+                    if(CONFIG.delegated_posting_accounts.includes(auth[0]) || CONFIG.delegated_posting_accounts[0] === "*") {
+                      //Add
+                      await delegatedAuthorityDb.findOneAndUpdate({
+                        type: "posting",
+                        to: auth[0],
+                        from: updateOp.account,
+                      }, {
+                        $set: {
+                          type: "posting",
+                          to: auth[0],
+                          from: updateOp.account,
+                          block_height: block_height,
+                          trx_id: tx.transaction_id,
+                          date: new Date(block.timestamp)
+                        }
+                      }, {
+                        upsert: true
+                      })
+                    }
+                  }
+                }
+              }
+            }
             if(op[0] === 'account_update2') {
               const profileData = op[1]
               const posting_json_metadata = JSON.parse(profileData.posting_json_metadata)
@@ -495,7 +546,7 @@ void (async () => {
 
                   const calculatedMetadata = {}
 
-                  if(json_metadata.app.startsWith('3speak/')) {
+                  if(json_metadata.app?.startsWith('3speak/')) {
                     const alreadyExisting = await posts.findOne({
                       author,
                       "video.first_upload": true

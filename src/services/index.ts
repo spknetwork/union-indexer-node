@@ -1,10 +1,11 @@
-import { Collection, Db, MongoClient } from 'mongodb'
+import { Collection, Db, MongoClient, Timestamp } from 'mongodb'
 import { CERAMIC_HOST } from '../utils';
 import { logger } from './common/logger.singleton'
 import {MONGODB_URL} from './db'
 // @ts-ignore
 import type { CeramicClient } from '@ceramicnetwork/http-client';
 import { StreamBridge } from './streamBridge';
+import { DelegatedAuthority } from '../types/index';
 
 export class CoreService {
     self: CoreService;
@@ -17,6 +18,7 @@ export class CoreService {
     streamBridge: StreamBridge;
     profileDb: Collection;
     communityDb: Collection;
+    delegatedAuthorityDb: Collection<DelegatedAuthority>;
     
     async start() {
         const url = MONGODB_URL
@@ -33,7 +35,33 @@ export class CoreService {
         this.followsDb = this.db.collection('follows')
         this.profileDb = this.db.collection('profiles')
         this.communityDb = this.db.collection('communities')
+        this.delegatedAuthorityDb = this.db.collection<DelegatedAuthority>('delegated-authority')
         
+
+        // void (async () => {
+        //     for await(let record of this.db.watch([], {
+        //         // fullDocument: "updateLookup",
+        //         // startAtOperationTime: new Timestamp({ t: 0, i: 2 })
+        //     }).stream()) {
+        //         // console.log(record)
+        //         // console.log(JSON.stringify(record.clusterTime))
+        //         const ts = Number(JSON.parse(JSON.stringify(record.clusterTime))['$timestamp'])
+        //         if((record as any).ns.coll !== 'hive_stream_state' && (record as any).ns.coll !== 'stats') {
+        //             console.log(record.clusterTime)
+        //         }
+        //         console.log(record)
+        //         if((record as any).ns.coll === 'posts') {
+        //         }
+        //         // if(testTs > ts) {
+        //         //     console.log('ts is smaller')
+        //         // } else {
+        //         //     console.log('ts is bigger')
+        //         // }
+        //         // testTs = ts;
+        //     }
+        // })()
+        // this.communityDb.watch()
+
         //We still need to use Ceramic on the union indexer a small amount. 
         // However, any Ceramic heavy operations should utilize the offchain indexer.
         const { CeramicClient } = await import('@ceramicnetwork/http-client')
@@ -118,5 +146,22 @@ export class CoreService {
         } catch {
 
         }
+
+        try {
+            await this.delegatedAuthorityDb.createIndex({
+                to: -1
+            })
+        } catch {
+
+        }
+        
+        try {
+            await this.delegatedAuthorityDb.createIndex({
+                from: -1
+            })
+        } catch {
+
+        }
+
     }
 }
