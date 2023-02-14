@@ -345,7 +345,7 @@ void (async () => {
             if(op[0] === "account_update") {
               const updateOp = op[1]
               if(updateOp.posting) {
-                if(updateOp.posting.account_auth) {
+                if(updateOp.posting.account_auths) {
                   const auths = await delegatedAuthorityDb.find({
                     to: op[1].account
                   }).toArray()
