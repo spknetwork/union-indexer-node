@@ -305,7 +305,7 @@ export const PostResolvers = {
     }
     return new Post(await indexerContainer.self.posts.findOne(mongodbQuery))
   },
-  async followingFeed(args: any) {
+  async followingFeed(_, args: any) {
     let following = []
     if(args.follower.startsWith("did:")) {
       const { data } = await Axios.post(OFFCHAIN_HOST, {
@@ -403,7 +403,7 @@ export const PostResolvers = {
       }),
     }
   },
-  async trendingFeed(args: any) {
+  async trendingFeed(_, args: any) {
     const mongodbQuery = {
       //"TYPE": "CERAMIC"
       created_at: {
@@ -436,7 +436,7 @@ export const PostResolvers = {
       }),
     }
   }, 
-  async publicFeed(args: any) {
+  async publicFeed(_, args: any) {
     const mongodbQuery = {}
     if (args.parent_permlink) {
       mongodbQuery['parent_permlink'] = args.parent_permlink
