@@ -240,7 +240,7 @@ export const Schema = `
         publicFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         latestFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         trendingFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
-        followingFeed(follower: String, limit: Int, skip: Int): FeedOutput
+        followingFeed(allow_comments: Boolean, follower: String, limit: Int, skip: Int): FeedOutput
         tagFeed(tag: String, skip: Int, limit: Int): FeedOutput
         firstUploadsFeeds(limit: Int, skip: Int): FeedOutput
 

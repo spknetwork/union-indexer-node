@@ -306,6 +306,13 @@ export const PostResolvers = {
     return new Post(await indexerContainer.self.posts.findOne(mongodbQuery))
   },
   async followingFeed(_, args: any) {
+    const mongodbQuery = {}
+    if(!args.allow_comments) {
+      mongodbQuery['parent_author'] = {
+          $in: ["", null]
+      }
+    }
+
     let following = []
     if(args.follower.startsWith("did:")) {
       const { data } = await Axios.post(OFFCHAIN_HOST, {
@@ -346,6 +353,7 @@ export const PostResolvers = {
     }
 
     const out = await indexerContainer.self.posts.find({
+      ...mongodbQuery,
       author: {
         $in: following
       }
