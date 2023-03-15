@@ -62,7 +62,8 @@ export class IndexerApiModule {
           "        body\n" +
           "      }\n" +
           "    }\n"+
-          "  }\n"
+          "  }\n" +
+          "}\n"
       },
     })
  
