@@ -315,32 +315,36 @@ export const PostResolvers = {
 
     let following = []
     if(args.follower.startsWith("did:")) {
-      const { data } = await Axios.post(OFFCHAIN_HOST, {
-        query: `
-        query Query($follower: String){
-          publicFeed(parent_id: $parent_id) {
-            stream_id
-            version_id
-            parent_id
-            creator_id
-            title
-            body
-            category
-            lang
-            type
-            app
-            json_metadata
-            app_metadata
-            debug_metadata
-            community_ref
-            created_at
-            updated_at
-          } 
-        }`,
-        variables: {
-          follower: args.follower,
-        },
-      })
+      try {
+        const { data } = await Axios.post(OFFCHAIN_HOST, {
+          query: `
+          query Query($follower: String){
+            followingFeed(did: $follower) {
+              stream_id
+              version_id
+              parent_id
+              creator_id
+              title
+              body
+              category
+              lang
+              type
+              app
+              json_metadata
+              app_metadata
+              debug_metadata
+              community_ref
+              created_at
+              updated_at
+            } 
+          }`,
+          variables: {
+            follower: args.follower,
+          },
+        })
+      } catch(ex) {
+        // console.log(ex)
+      }
 
     } else {
       const data = await HiveClient.database.call('get_following', [

@@ -113,6 +113,9 @@ export const Resolvers = {
     const community = await indexerContainer.self.communityDb.findOne({
         _id: `hive/${args.id}`
     })
+    if(!community) {
+      return null;
+    }
     const roles = community.roles.map(e => {
       const [username, role, title] = e;
       return {
