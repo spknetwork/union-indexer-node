@@ -76,8 +76,6 @@ export class CoreService {
     const mongo = new MongoClient(url)
     await mongo.connect()
 
-    await mongoOffchan.connect()
-
     this.offchainDb = mongoOffchan.db('spk-indexer-test')
 
     console.log(this.offchainDb)
@@ -94,7 +92,10 @@ export class CoreService {
     this.communityDb = this.db.collection('communities')
     this.delegatedAuthorityDb = this.db.collection<DelegatedAuthority>('delegated-authority')
 
-    this.offchainSync()
+    if(process.env.OFFCHAIN_BRIDGE_ENABLED === "true") {
+      this.offchainSync()
+      await mongoOffchan.connect()
+    }
 
     //We still need to use Ceramic on the union indexer a small amount.
     // However, any Ceramic heavy operations should utilize the offchain indexer.
