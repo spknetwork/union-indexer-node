@@ -20,8 +20,12 @@ indexVersion=`cat deploy/index-flag`
 }
 echo "$indexVersion $indexVersionDeployed"
 
-docker-compose build
 docker-compose down
+
+sleep 15; # Ensure safe shutdown
+
+docker-compose build
+
 
 if [ "$indexVersion" -ne "$indexVersionDeployed" ];
 then 
