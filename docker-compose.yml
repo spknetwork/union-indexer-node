@@ -20,7 +20,7 @@ services:
       IPFS_HOST: ipfs:5001
       ENABLE_CORS: "true"
       SPK_INDEXER_HOST: "https://us-01.infra.3speak.tv"
-  union-indexer_hive:
+  hive-events-union:
     image: union-indexer-node
     restart: always
     depends_on:
