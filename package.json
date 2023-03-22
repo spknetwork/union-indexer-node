@@ -56,7 +56,7 @@
     "test:report": "sensible-browser ./coverage/lcov-report/index.html",
     "test": "jest --coverage",
     "start-workers": "concurrently \"npm run start-worker:hive-events\" \"npm run start-worker:stats\"",
-    "start-worker:hive-events": "nodemon dist/workers/hive-stream.js",
+    "start-worker:hive-events": "node dist/workers/hive-stream.js",
     "start-worker:stats": "node dist/workers/post-stats.js",
     "start-worker:offchain-ids": "node dist/workers/post-stats.js"
   },
