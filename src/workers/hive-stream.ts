@@ -1,11 +1,32 @@
 import { CONFIG } from '../config'
 import { ALLOWED_APPS, detectPostType } from '../services/block_processing/posts'
 import { mongo } from '../services/db'
-import { fastStream, HiveClient } from '../utils'
+import { fastStream, HiveClient, obj_set } from '../utils'
 import DiffMatchPatch from '@2toad/diff-match-patch'
 import Moment from 'moment'
 import { AnyBulkWriteOperation, Document } from 'mongodb'
+import url from 'url'
 import { DelegatedAuthority } from '../types/index'
+import { PostStruct } from '../types/posts'
+
+function pulloutIpfsLinks(json_metadata) {
+
+  let ipfs_links = []
+  let source_map = []
+  if(json_metadata?.video?.info?.sourceMap) {
+    json_metadata?.video?.info?.sourceMap.forEach(e => {
+      ipfs_links.push({
+        cid: url.parse(e.url).host
+      })
+      source_map.push(e)
+    })
+  }
+
+  return {
+    ipfs_links,
+    source_map
+  }
+}
 
 void (async () => {
   
@@ -13,7 +34,7 @@ void (async () => {
 
   const db = mongo.db('spk-union-indexer')
   const hiveStreamState = db.collection('hive_stream_state')
-  const posts = db.collection('posts')
+  const posts = db.collection<PostStruct>('posts')
   const stats = db.collection('stats')
   const hiveProfiles = db.collection('profiles')
   const followsDb = db.collection('follows')
@@ -151,7 +172,7 @@ void (async () => {
     // postsBulkWrite = posts.initializeUnorderedBulkOp()
     console.log("RUNNING BULK WRITE")
     if(bulkWritePosts.length > 0) {
-      const postsPromise = posts.bulkWrite(bulkWritePosts)
+      const postsPromise = posts.bulkWrite(bulkWritePosts as any)
       
       bulkWritePosts = []
   
@@ -500,6 +521,12 @@ void (async () => {
                     }
                   }
                   
+                  if(Array.isArray(json_metadata.tags)) {
+                    if(json_metadata.tags.includes('deleted')) {
+                      newStatus = 'deleted'
+                    }
+                  }
+                  
                   postsBulkWrite.find({
                     _id: alreadyExisting._id
                   }).updateOne({
@@ -545,6 +572,19 @@ void (async () => {
                   }
 
                   const calculatedMetadata = {}
+                  const flags = []
+
+                  const thirdOperation = tx.operations[2];
+
+                  if(thirdOperation) {
+                    //Should be custom json. Double check though.
+                    //This should work for 98% of videos. However, a growing number of 3rd party and mobile app uploads won't have this.
+                    if(thirdOperation[0] === "custom_json") {
+                      if(thirdOperation[1].id === "3speak-publish" && thirdOperation[1].required_posting_auths.includes('threespeak')) {
+                        obj_set(calculatedMetadata, 'app_metadata.spkvideo.authority_signed', true)
+                      }
+                    }
+                  }
 
                   if(json_metadata.app?.startsWith('3speak/')) {
                     const alreadyExisting = await posts.findOne({
@@ -552,10 +592,28 @@ void (async () => {
                       "video.first_upload": true
                     })
                     if(!alreadyExisting) {
-                      calculatedMetadata['video'] = {
-                        first_upload: true
-                      }
+                      obj_set(calculatedMetadata, 'app_metadata.spkvideo.first_upload', true)
                     }
+                  }
+
+                  const {ipfs_links, source_map} = pulloutIpfsLinks(json_metadata)
+
+                  let storage_type = "legacy"
+
+                  if(source_map.find(e => {
+                    return e.type === "thumbnail"
+                  })) {
+                    storage_type = "thumbnail_ipfs"
+                  } else if(source_map.find(e => {
+                    return e.type === "video"
+                  })) {
+                    storage_type = "ipfs"
+                  }
+
+                  obj_set(calculatedMetadata, "app_metadata.spkvideo.storage_type", storage_type)
+
+                  if(op[1].parent_author !== "") {
+                    flags.push('comment')
                   }
 
                   postsBulkWrite.insert({
@@ -575,7 +633,11 @@ void (async () => {
                     updated_at: new Date(block.timestamp),
                     TYPE: 'HIVE',
                     metadata_status: 'unprocessed',
-                    beneficiaries
+                    beneficiaries,
+                    ipfs_links,
+                    __v: '0.1',
+                    __t: "post_hive",
+                    flags
                   })
                   // await posts.insertOne({
                   //   ...op[1],
