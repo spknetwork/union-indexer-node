@@ -19,7 +19,7 @@ export const schema = createSchema({
     // JSON: JSONResolver
   },
   resolverValidationOptions: {
-    requireResolversForAllFields: 'warn',
+    requireResolversForAllFields: 'ignore'
   }
 })
 

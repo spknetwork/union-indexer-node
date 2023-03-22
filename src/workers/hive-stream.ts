@@ -586,6 +586,7 @@ void (async () => {
                     }
                   }
 
+                  const {ipfs_links, source_map} = pulloutIpfsLinks(json_metadata)
                   if(json_metadata.app?.startsWith('3speak/')) {
                     const alreadyExisting = await posts.findOne({
                       author,
@@ -594,24 +595,23 @@ void (async () => {
                     if(!alreadyExisting) {
                       obj_set(calculatedMetadata, 'app_metadata.spkvideo.first_upload', true)
                     }
+                    
+                    let storage_type = "legacy"
+
+                    if(source_map.find(e => {
+                      return e.type === "thumbnail"
+                    })) {
+                      storage_type = "thumbnail_ipfs"
+                    }
+                    
+                    if(source_map.find(e => {
+                      return e.type === "video"
+                    })) {
+                      storage_type = "ipfs"
+                    }
+                    obj_set(calculatedMetadata, "app_metadata.spkvideo.storage_type", storage_type)
                   }
-
-                  const {ipfs_links, source_map} = pulloutIpfsLinks(json_metadata)
-
-                  let storage_type = "legacy"
-
-                  if(source_map.find(e => {
-                    return e.type === "thumbnail"
-                  })) {
-                    storage_type = "thumbnail_ipfs"
-                  } else if(source_map.find(e => {
-                    return e.type === "video"
-                  })) {
-                    storage_type = "ipfs"
-                  }
-
-                  obj_set(calculatedMetadata, "app_metadata.spkvideo.storage_type", storage_type)
-
+                  
                   if(op[1].parent_author !== "") {
                     flags.push('comment')
                   }
