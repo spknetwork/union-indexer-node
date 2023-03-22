@@ -1,10 +1,10 @@
 import { mongo } from '../db'
 import twitter from 'twitter-text'
-import { PostHive } from '../../types/posts'
+import { PostStruct } from '../../types/posts'
 
 const mentionRegex = /((?:^|[^a-zA-Z0-9_!#$%&*@＠]|(?:^|[^a-zA-Z0-9_+~.-])(?:rt|RT|rT|Rt):?))([@＠])([a-zA-Z0-9_:-]{1,80})(\/[a-zA-Z:][a-zA-Z0-9_:-]{0,24})?/g
 
-export function createNotificationsFromPost(post: PostHive) {
+export function createNotificationsFromPost(post: PostStruct) {
   if(!post.body) {
     return [
       
