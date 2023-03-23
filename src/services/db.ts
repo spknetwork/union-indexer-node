@@ -68,6 +68,34 @@ PostSchema.index(
 
 PostSchema.index(
   {
+    'app_metadata.types': -1,
+    created_at: -1,
+  },
+  {
+    partialFilterExpression: {
+      'app_metadata.spkvideo.types': {
+        $exists: true,
+      },
+    },
+  },
+)
+
+PostSchema.index(
+  {
+    'app_metadata.app': -1,
+    created_at: -1,
+  },
+  {
+    partialFilterExpression: {
+      'app_metadata.app': {
+        $exists: true,
+      },
+    },
+  },
+)
+
+PostSchema.index(
+  {
     'flags': -1,
   },
   {
@@ -111,6 +139,7 @@ notifications.index({
   ref: 1,
   target: 1
 })
+//Unused
 
 const follows = new Schema()
 
@@ -119,7 +148,19 @@ follows.index({
   follower: -1
 })
 
+
+const delegatedAuthority = new Schema()
+
+delegatedAuthority.index({
+  from: 1
+})
+
+delegatedAuthority.index({
+  from: -1
+})
+
 export const Models = {
   PostsModel: mongoose.model('posts', PostSchema),
-  FollowsModel: mongoose.model('follows', follows)
+  FollowsModel: mongoose.model('follows', follows),
+  DelegatedAuthorityModel: mongoose.model('delegated-authority', delegatedAuthority),
 }
