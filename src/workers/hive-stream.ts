@@ -9,14 +9,15 @@ import url from 'url'
 import { DelegatedAuthority } from '../types/index'
 import { PostStruct } from '../types/posts'
 
-function pulloutIpfsLinks(json_metadata) {
 
+
+function pulloutIpfsLinks(json_metadata) {
   let ipfs_links = []
   let source_map = []
   if(json_metadata?.video?.info?.sourceMap) {
     json_metadata?.video?.info?.sourceMap.forEach(e => {
       ipfs_links.push({
-        cid: url.parse(e.url).host
+        cid: new url.URL(e.url).host
       })
       source_map.push(e)
     })
@@ -324,6 +325,9 @@ void (async () => {
               if(id === "spk.follow") {
                 //TODO: Implement spk following of offchain accounts
               }
+              if(id === "spk.unfollow") {
+                
+              }
               if(id === 'follow') {
                 let json
                 try {
@@ -571,7 +575,7 @@ void (async () => {
                     }
                   }
 
-                  const calculatedMetadata = {}
+                  const calculatedMetadata = {} as any
                   const flags = []
 
                   const thirdOperation = tx.operations[2];
@@ -611,6 +615,9 @@ void (async () => {
                     }
                     obj_set(calculatedMetadata, "app_metadata.spkvideo.storage_type", storage_type)
                   }
+
+                  obj_set(calculatedMetadata, "app_metadata.types", Object.keys(calculatedMetadata.app_metadata))
+                  obj_set(calculatedMetadata, "app_metadata.app", json_metadata.app.split('/')[0])
                   
                   if(op[1].parent_author !== "") {
                     flags.push('comment')
