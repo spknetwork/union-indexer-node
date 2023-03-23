@@ -58,7 +58,7 @@
     "test": "jest --coverage",
     "start-workers": "concurrently \"npm run start-worker:hive-events\" \"npm run start-worker:background-scripts\"",
     "start-worker:hive-events": "node dist/workers/hive-stream.js",
-    "start-worker:background-scripts": "node dist/workers/background-proc/index.js",
+    "start-worker:background-scripts": "node dist/workers/background-proc/index.js"
   },
   "author": "",
   "license": "ISC"
