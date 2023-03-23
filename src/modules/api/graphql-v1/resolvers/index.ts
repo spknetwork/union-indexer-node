@@ -1,4 +1,4 @@
-import { indexerContainer } from '../..'
+import { indexerContainer } from '../../index'
 import {HiveClient, OFFCHAIN_HOST} from '../../../../utils'
 import Axios from 'axios'
 import moment from 'moment';

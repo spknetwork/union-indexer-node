@@ -1,4 +1,4 @@
-import { JSONDefinition } from "graphql-scalars"
+import { JSONDefinition } from 'graphql-scalars'
 
 export const Schema = `
     ${JSONDefinition}
@@ -142,7 +142,6 @@ export const Schema = `
 
         # Access original content on Ceramic
         original_content: JSON
-
     }
     
     type HivePost {
@@ -194,6 +193,11 @@ export const Schema = `
         items: [MergedPost]
     }
 
+    type FeedOutputMinimal {
+        items: [MergedPost]
+    }
+    
+
     type CommunityRole {
         username: String
         role: String
@@ -234,26 +238,51 @@ export const Schema = `
         total_active_creators: Int
     }
 
+    input WhereField {
+        _regex: String
+        _eq: String
+        _ne: String
+        _lt: Int
+        _gt: Int
+        _lte: Int
+        _gte: Int
+        _and: [String!]
+        _in: [String!]
+        _nin: [String!]
+    }
+      
+    input FeedQuery {
+        tag: WhereField
+    }
+
     type Query {
 
+        # FEEDS ----
         # Basic feeds
         publicFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         latestFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
         trendingFeed(parent_permlink: String, permlink: String, author: String, apps: [String], limit: Int, skip: Int): FeedOutput
+        # GONE
         followingFeed(allow_comments: Boolean, follower: String, limit: Int, skip: Int): FeedOutput
+
+        # GONE
         tagFeed(tag: String, skip: Int, limit: Int): FeedOutput
+        # GONE
         firstUploadsFeeds(limit: Int, skip: Int): FeedOutput
+        relatedPosts(author: String, permlink: String): FeedOutput
 
 
         socialPost(author: String, permlink: String): MergedPost
 
-        profile(username: String): MergedProfile
+        profile(id: String): MergedProfile
 
         syncState: SyncState
 
         trendingTags(limit: Int): TrendingTags
-        relatedPosts(permlink: String, author: String): FeedOutput
+
+        
         community(id: String): CommunityOutput
+
         follows(id: String): FollowOverview
         leaderBoard: LeaderBoard
     }

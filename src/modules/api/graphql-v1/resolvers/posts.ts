@@ -242,15 +242,15 @@ export class Post {
     async community() {
       const permlink = this.parent_permlink;
       if(permlink.startsWith('hive-')) {
-          const communityInfo = await HiveClient.call('bridge', 'get_community', {
-              name: permlink
-          })
-
+          // const communityInfo = await HiveClient.call('bridge', 'get_community', {
+          //     name: permlink
+          // })
+          console.log('querying community')
           const communityDb = await indexerContainer.self.communityDb.findOne({
             _id: `hive/${permlink}`
           })
-          // console.log('communityDb', communityDb)
-          return communityInfo
+          console.log('communityDb', communityDb)
+          return communityDb
       } else {
           return null;
       }

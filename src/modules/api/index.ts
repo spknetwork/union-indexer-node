@@ -6,8 +6,10 @@ import { createSchema, createYoga } from 'graphql-yoga'
 import { JSONResolver} from "graphql-scalars"
 import { CoreService } from '../../services'
 import { GatewayApiController } from './controller'
-import { Resolvers } from './graphql/resolvers'
-import { Schema } from './graphql/schema'
+import { Resolvers } from './graphql-v1/resolvers/index'
+import { Schema } from './graphql-v1/schema'
+import { Schema as SchemaV2 } from './graphql-v2/schema'
+import { Resolvers as ResolversV2 } from './graphql-v2/resolvers/index'
 
 export const ipfsContainer: {  } = {} as any
 export const indexerContainer: { self: CoreService  } = {} as any
@@ -16,6 +18,17 @@ export const schema = createSchema({
   typeDefs: /* GraphQL */ Schema,
   resolvers: {
     Query: Resolvers,
+    // JSON: JSONResolver
+  },
+  resolverValidationOptions: {
+    requireResolversForAllFields: 'ignore'
+  }
+})
+
+export const schemaV2 = createSchema({
+  typeDefs: /* GraphQL */ SchemaV2,
+  resolvers: {
+    Query: ResolversV2,
     // JSON: JSONResolver
   },
   resolverValidationOptions: {
@@ -68,6 +81,29 @@ export class IndexerApiModule {
     })
  
     app.use('/api/v1/graphql', yoga)
+
+    const yogaV2 = createYoga({
+      schema: schemaV2,
+      graphqlEndpoint: `/api/v2/graphql`,
+      graphiql: {
+        //NOTE: weird string is for formatting on UI to look OK
+        defaultQuery: /* GraphQL */ "" +
+          "query MyQuery {\n" +
+          " latestFeed(limit: 10) {\n" +
+          "   items {\n" +
+          "      ... on HivePost {\n" +
+          "        parent_permlink\n" +
+          "        parent_author\n" +
+          "        title\n" +
+          "        body\n" +
+          "      }\n" +
+          "    }\n"+
+          "  }\n" +
+          "}\n"
+      },
+    })
+ 
+    app.use('/api/v2/graphql', yogaV2)
     // Pass it into a server to hook into request handlers.
 
     app.enableShutdownHooks()
