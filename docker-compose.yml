@@ -31,25 +31,14 @@ services:
     environment:
       MONGO_HOST: mongo:27017
       HIVE_HOST: "https://api.deathwing.me"
-  stats:
+  background-scripts:
     image: union-indexer-node
     restart: always
     depends_on:
       - union-indexer-node
     networks:
       - union-indexer-network
-    command: npm run start-worker:stats
-    environment:
-      MONGO_HOST: mongo:27017
-      HIVE_HOST: "https://api.deathwing.me"
-  offchain-ids:
-    image: union-indexer-node
-    restart: always
-    depends_on:
-      - union-indexer-node
-    networks:
-      - union-indexer-network
-    command: npm run start-worker:offchain-ids
+    command: npm run start-worker:background-scripts
     environment:
       MONGO_HOST: mongo:27017
       HIVE_HOST: "https://api.deathwing.me"

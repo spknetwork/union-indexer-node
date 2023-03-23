@@ -26,6 +26,7 @@
     "moment": "^2.29.3",
     "mongodb": "^4.7.0",
     "mongoose": "^7.0.2",
+    "node-schedule": "^2.1.1",
     "p-queue": "^7.2.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.5.5",
@@ -55,10 +56,9 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "test:report": "sensible-browser ./coverage/lcov-report/index.html",
     "test": "jest --coverage",
-    "start-workers": "concurrently \"npm run start-worker:hive-events\" \"npm run start-worker:stats\"",
+    "start-workers": "concurrently \"npm run start-worker:hive-events\" \"npm run start-worker:background-scripts\"",
     "start-worker:hive-events": "node dist/workers/hive-stream.js",
-    "start-worker:stats": "node dist/workers/post-stats.js",
-    "start-worker:offchain-ids": "node dist/workers/post-stats.js"
+    "start-worker:background-scripts": "node dist/workers/background-proc/index.js",
   },
   "author": "",
   "license": "ISC"
