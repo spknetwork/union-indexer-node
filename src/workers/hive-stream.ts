@@ -323,10 +323,39 @@ void (async () => {
                 }
               }
               if(id === "spk.follow") {
-                //TODO: Implement spk following of offchain accounts
+                const account = op[1].required_posting_auths[0]
+                let json
+                try {
+                  json = JSON.parse(json_raw)
+                } catch {
+                  continue;
+                }
+                await followsDb.findOneAndUpdate({
+                  _id: `hive/${account}/${json.did}`,
+                  follower: account,
+                  following: json.did,
+                }, {
+                  $set: {
+                    what: json.what
+                  }
+                }, {
+                  upsert: true
+                })
               }
               if(id === "spk.unfollow") {
-                
+                const account = op[1].required_posting_auths[0]
+                let json
+                try {
+                  json = JSON.parse(json_raw)
+                } catch {
+                  continue;
+                }
+                await followsDb.findOneAndDelete({
+                  _id: `hive/${account}/${json.did}`,
+                  follower: account,
+                  following: json.did,
+                  what: json.what
+                })
               }
               if(id === 'follow') {
                 let json
