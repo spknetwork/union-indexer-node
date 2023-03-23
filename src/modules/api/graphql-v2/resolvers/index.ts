@@ -7,8 +7,8 @@ export function TransformArgToMongodb(
     if (!args) {
       return {};
     }
-    let queryParams: Record<string, any> = {};
-    for (let keyRaw in args) {
+  let queryParams: Record<string, any> = {}
+  for (let keyRaw in args) {
       const key = keyRaw as keyof typeof args;
       if ((key === '_in' || key === '_nin') && !args[key]?.length) {
         continue;

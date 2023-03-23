@@ -1,4 +1,3 @@
-import type { CeramicClient } from '@ceramicnetwork/http-client'
 import { Collection } from 'mongodb'
 import NodeSchedule from 'node-schedule'
 import { mongo } from '../../services/db'
@@ -9,7 +8,7 @@ import { CERAMIC_HOST, HiveClient } from '../../utils'
 export class BackgroundCore {
   communityDb: any
   posts: Collection<PostStruct>
-  ceramic: CeramicClient
+  ceramic: any
 
   async createOffchainId(post: PostStruct) {}
 
