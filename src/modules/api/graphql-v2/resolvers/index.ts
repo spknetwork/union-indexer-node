@@ -1,22 +1,20 @@
-import { indexerContainer } from "../../index";
-import { HivePost } from "./posts";
+import { indexerContainer } from '../../index'
+import { HivePost } from './posts'
 
-export function TransformArgToMongodb(
-    args: any
-  ) {
-    if (!args) {
+export function TransformArgToMongodb(args: any) {
+  if (!args) {
       return {};
     }
   let queryParams: Record<string, any> = {}
   for (let keyRaw in args) {
-      const key = keyRaw as keyof typeof args;
-      if ((key === '_in' || key === '_nin') && !args[key]?.length) {
-        continue;
-      }
-      queryParams[key.replace('_', '$')] = args[key];
+    const key = keyRaw as keyof typeof args
+    if ((key === '_in' || key === '_nin') && !args[key]?.length) {
+      continue
     }
-    return queryParams;
+    queryParams[(key as string).replace('_', '$')] = args[key]
   }
+  return queryParams
+}
 
 function TransformNestedQuery(query: any, root_key: string): any {
   if (!query) {
