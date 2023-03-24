@@ -10,6 +10,12 @@ export class BackgroundCore {
   posts: Collection<PostStruct>
   ceramic: any
 
+  constructor() {
+    this.communityRefresh = this.communityRefresh.bind(this)
+    this.offchainIdRefresh = this.offchainIdRefresh.bind(this)
+    this.postStats = this.postStats.bind(this)
+  }
+
   async createOffchainId(post: PostStruct) {}
 
   async offchainIdRefresh() {
