@@ -29,6 +29,7 @@ export class CoreService {
   communityDb: Collection
   delegatedAuthorityDb: Collection<DelegatedAuthority>
   offchainDb: Db
+  socialConnections: Collection
 
   async offchainSync() {
     try {
@@ -107,6 +108,7 @@ export class CoreService {
     this.communityDb = this.db.collection('communities')
     this.delegatedAuthorityDb = this.db.collection<DelegatedAuthority>('delegated-authority')
 
+    this.socialConnections = this.offchainDb.collection('social_connections')
     if(process.env.OFFCHAIN_BRIDGE_ENABLED === "true") {
       await mongoOffchan.connect()
       this.offchainSync()

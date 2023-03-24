@@ -48,7 +48,7 @@ export const Schema = `
 
         json_metadata: JsonMetadata
 
-        children: [MergedPost]
+        children: [SocialPost]
 
         created_at: Date
         updated_at: Date
@@ -59,7 +59,7 @@ export const Schema = `
     type CeramicPost implements SocialPost {
         parent_author: String
         parent_permlink: String
-        parent_post: MergedPost
+        parent_post: SocialPost
 
         author: AuthorBase
         permlink: String
@@ -76,7 +76,7 @@ export const Schema = `
 
         stats: PostStats
         
-        children: [MergedPost]
+        children: [SocialPost]
 
         # Same type as HivePost, interchangeable with stream_id
         off_chain_id: String
@@ -93,7 +93,7 @@ export const Schema = `
     type HivePost implements SocialPost {
         parent_author: String
         parent_permlink: String
-        parent_post: MergedPost
+        parent_post: SocialPost
 
         author: AuthorBase
         permlink: String
@@ -107,7 +107,7 @@ export const Schema = `
         
         community: JSON # Create schema
         
-        children: [MergedPost]
+        children: [SocialPost]
 
         created_at: Date
         updated_at: Date
@@ -117,7 +117,7 @@ export const Schema = `
         # Non-essential / arbitrary / TBD
         lang: String
         app_metadata: JSON
-        post_type: String
+        post_type: [String]
 
         flags: [String]
 
@@ -194,7 +194,6 @@ export const Schema = `
         # Communities can have both about and description
         # About is usually a short summary
         about: String
-        description: String 
         subscribers: Int
 
         created_at: String
@@ -204,7 +203,8 @@ export const Schema = `
 
         images: ProfileImages
 
-        socialFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
+        latestFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
+        trendingFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
     }
 
     type SyncState {
@@ -268,10 +268,10 @@ export const Schema = `
     input FeedOptions {
         includeComments: Boolean
         includeCeramic: Boolean
-        byFollower: WhereField #Skip resolver for now
+        byFollower: String 
         byTag: WhereField
         byCreator: WhereField
-        # Parent permlink
+        # Parent permlink #Skip resolver for now
         byPermlink: WhereField
         byCommunity: WhereField
         byApp: WhereField
@@ -283,7 +283,7 @@ export const Schema = `
         socialFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
         trendingFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
 
-        relatedFeed(pagination: PaginationOptions): FeedOutput
+        relatedFeed(author: String, permlink: String, pagination: PaginationOptions): FeedOutput
 
         profile(id: String): MergedProfile
 

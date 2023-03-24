@@ -32,6 +32,16 @@ PostSchema.index({
 })
 
 PostSchema.index({
+  parent_permlink: -1,
+  created_at: -1
+})
+
+PostSchema.index({
+  parent_permlink: -1,
+  "stats.num_comments": -1
+})
+
+PostSchema.index({
   'json_metadata.app': 1,
   created_at: -1,
 })

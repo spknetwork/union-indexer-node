@@ -39,12 +39,24 @@ export class HivePost {
     return [`hive:${this.author}:${this.permlink}`]
   }
 
+  get post_type() {
+    return this.rawDoc.app_metadata?.type
+  }
+
   get tags() {
     return this.rawDoc.tags
   }
 
   get json_metadata() {
-    return this.rawDoc.json_metadata
+    return {
+      image: this.rawDoc.json_metadata.image,
+      app: this.rawDoc.json_metadata.app,
+      raw: this.rawDoc.json_metadata
+    }
+  }
+
+  get app_metadata() {
+    return this.rawDoc.app_metadata
   }
 
   get app() {
@@ -53,14 +65,6 @@ export class HivePost {
 
   get off_chain_id() {
     return this.rawDoc.off_chain_id
-  }
-
-  get post_type() {
-    if (this.rawDoc.json_metadata.app.startsWith('3speak/')) {
-      return 'spkvideo'
-    } else {
-      return 'hive_post'
-    }
   }
 
   get __typename() {
@@ -139,7 +143,7 @@ export class HivePost {
     return this.rawDoc.stats
   }
 
-  async children(args) {
+  async children(_, args) {
     // if (this.off_chain_id) {
     //   const { data } = await Axios.post(OFFCHAIN_HOST, {
     //     query: `
@@ -226,15 +230,15 @@ export class HivePost {
   async community() {
     const permlink = this.parent_permlink
     if (permlink.startsWith('hive-')) {
-      const communityInfo = await HiveClient.call('bridge', 'get_community', {
-        name: permlink,
-      })
+      // const communityInfo = await HiveClient.call('bridge', 'get_community', {
+      //   name: permlink,
+      // })
 
       const communityDb = await indexerContainer.self.communityDb.findOne({
         _id: `hive/${permlink}`,
       })
       // console.log('communityDb', communityDb)
-      return communityInfo
+      return communityDb
     } else {
       return null
     }
