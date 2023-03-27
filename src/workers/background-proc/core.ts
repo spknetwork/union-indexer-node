@@ -54,11 +54,11 @@ export class BackgroundCore {
     const items = await this.posts.find({
       $or: [
         {
-          'app_metadata.app': { $in: '3speak' },
+          'app_metadata.app': { $in: ['3speak'] },
           need_stat_update: true,
         },
         {
-          'app_metadata.app': { $in: '3speak' },
+          'app_metadata.app': { $in: ['3speak'] },
           need_stat_update: {
             $exists: false,
           },
