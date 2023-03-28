@@ -11,7 +11,7 @@ export const CERAMIC_HOST = process.env.CERAMIC_HOST || "https://ceramic.3speak.
 
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
-    const queue = new PQueue({ concurrency: 35 })
+    const queue = new PQueue({ concurrency: 45 })
     if(!streamOpts.endBlock) {
         const currentBlock = await HiveClient.blockchain.getCurrentBlock()
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
