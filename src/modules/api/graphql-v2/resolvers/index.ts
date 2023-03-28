@@ -140,12 +140,23 @@ export const Resolvers = {
   async trendingFeed(_, args){
     const query = await TransformFeedArgs(args)
 
-    console.log('query', query)
+    const latestPost = await indexerContainer.self.posts.findOne({
+      ...query,
+      TYPE: { $ne: 'CERAMIC' },
+    }, {
+      sort: {
+        created_at: -1
+      }
+    })
+
     const outPut = await indexerContainer.self.posts
       .find(
         {
           ...query,
           TYPE: { $ne: 'CERAMIC' },
+          created_at: {
+            $gt: moment(latestPost?.created_at || new Date()).subtract('3', 'days').toDate()
+          }
         },
         {
           limit: args.pagination?.limit || 100,
