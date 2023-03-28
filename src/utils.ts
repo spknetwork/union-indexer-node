@@ -17,7 +17,7 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
         streamOpts.endBlock = block_height;
     }
-    let setSize = 40
+    let setSize = 30
     //let startBlock = 42837;
     //Use 30874325 in the state store (database) to parse from the beginning of 3speak
     let endSet = (streamOpts.endBlock - streamOpts.startBlock) / setSize
