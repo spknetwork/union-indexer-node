@@ -6,15 +6,9 @@ import { Models, MONGODB_URL, mongoOffchan } from './db'
 import type { CeramicClient } from '@ceramicnetwork/http-client'
 import { StreamBridge } from './streamBridge'
 import { DelegatedAuthority } from '../types/index'
+import { PostStruct } from '../types/posts'
 
 
-function CeramicToBasetemplate(data) {
-
-
-  return {
-    status: 'published'
-  }
-}
 
 export class CoreService {
   self: CoreService
@@ -44,33 +38,62 @@ export class CoreService {
   
         if ((record as any).ns.coll === 'graph.docs') {
           if (fullDocument.content) {
+            const content = fullDocument.content;
+
+            let flags = []
+
+            if(fullDocument.parent_headers?.permlink) {
+              flags.push('comment')
+            }
+
+            const $set: PostStruct = {
+
+              parent_author: fullDocument.parent_headers?.author || null,
+              parent_permlink: fullDocument.parent_headers?.permlink || null,
+              author: fullDocument.creator_id,
+              permlink: fullDocument.app_metadata?.permlink || null,
+              status: 'published',
+              title: content.title,
+              body: content.body,
+              tags: content?.json_metadata?.tags || [],
+              updated_at: fullDocument.updated_at,
+              created_at: fullDocument.created_at,
+              metadata_status: 'unprocessed',
+              need_stat_update: false,
+              state_control: {
+                version_id: fullDocument.version_id
+              },
+              origin_control: {
+                allowed_by_parent: false,
+                allowed_by_type: true,
+                allowed_by_community: false
+              },
+              // json_metadata: {
+              //   image: [],
+              //   tags: [],
+              //   app: ''
+              // },
+              json_metadata: content?.json_metadata,
+              app_metadata: {
+                types: []
+                // spkvideo: {
+                //   authority_signed: false,
+                //   storage_type: 'legacy',
+                //   first_upload: false
+                // }
+              },
+              ipfs_links: [],
+              beneficiaries: [],
+              __v: '0.1',
+              __t: 'post_ceramic',
+              flags
+            }
             await this.posts.findOneAndUpdate(
               {
                 id: fullDocument.id,
               },
               {
-                $set: {
-                  title: fullDocument.content.title,
-                  body: fullDocument.content.body,
-  
-                  origin_control: {
-                    allowed_by_parent: false,
-                    allowed_by_type: true,
-                  },
-                  tags: [],
-  
-                  permlink: fullDocument.id,
-                  author: fullDocument.creator_id,
-  
-                  created_at: fullDocument.created_at,
-                  updated_at: new Date(fullDocument.updated_at),
-                  local_update_at: new Date(),
-  
-                  TYPE: 'CERAMIC',
-                  state_control: {
-                    version_id: fullDocument.version_id,
-                  },
-                },
+                $set
               },
               {
                 upsert: true,
