@@ -110,6 +110,15 @@ async function TransformFeedArgs(args: any) {
 }
 
 export const Resolvers = {
+  async socialPost(_, args) {
+    const outPut = await indexerContainer.self.posts.findOne({
+      author: args.author,
+      permlink: args.permlink
+    })
+
+    outPut['__typename'] = 'HivePost'
+    return new HivePost(outPut)
+  },
   async socialFeed(_, args) {
     const query = await TransformFeedArgs(args)
 
