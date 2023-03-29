@@ -26,17 +26,39 @@ export class CoreService {
   socialConnections: Collection
 
   async offchainSync() {
+    let lastTs = null
+    let totalHistoryRecords = 0;
+
+    const lastTsDb = await this.streamState.findOne({
+      id: "offchaindb-sync"
+    })
+
+    let startTs = new Timestamp(lastTsDb.lastTs)
+
+    setInterval(async() => {
+      await this.streamState.findOneAndUpdate({
+        id: "offchaindb-sync"
+      }, {
+        $set: {
+          lastTs
+        }
+      }, {
+        upsert: true
+      })
+    }, 1000)
+    
     try {
-      let lastTs = null
       for await (let record of this.offchainDb
         .watch([], {
           fullDocument: 'updateLookup',
-          startAtOperationTime: new Timestamp({ t: 0, i: 2 }),
+          startAtOperationTime: startTs,
         })
         .stream()) {
         const fullDocument = (record as any).fullDocument
-  
-        if ((record as any).ns.coll === 'graph.docs') {
+          
+        const updatedFields = Object.keys((record as any).updateDescription?.updatedFields || []);
+        //Ensure collection is graph.docs & ensure we only process large updates rather than basic metadata changes
+        if ((record as any).ns.coll === 'graph.docs' && (updatedFields[0] !== 'last_pinged' || updatedFields.length !== 1)) {
           if (fullDocument.content) {
             const content = fullDocument.content;
 
@@ -104,6 +126,8 @@ export class CoreService {
         // console.log(record)
         const ts = record.clusterTime.toString()
         lastTs = ts
+        // console.log(lastTs)
+        totalHistoryRecords = totalHistoryRecords + 1;
       }
     } catch (ex) {
       console.log(ex)
