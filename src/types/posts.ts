@@ -73,6 +73,7 @@ export interface PostStruct {
     __v: '0.1'
     __t: 'post_hive' | 'post_ceramic'
     flags: string[] // "comment"
+    [x: string]: any
 }
 
 export interface PostSpk {

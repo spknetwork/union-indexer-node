@@ -8,13 +8,10 @@ export async function createPostStreamID(post, ceramic: CeramicClient) {
   const { TileDocument } = await import('@ceramicnetwork/stream-tile')
 
   const header = {
-    deterministic_content: {
-      type: 'external_doc',
-      sub_type: 'social_post',
-      post_type: 'HIVE',
-      owner: post.author,
-      permlink: post.permlink,
-    },
+    types: 'external_ref/social_post',
+    post_type: 'hive',
+    author: post.author,
+    permlink: post.permlink,
     deterministic: true,
     controllers: [NULL_DID],
   }

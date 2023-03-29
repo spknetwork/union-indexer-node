@@ -36,7 +36,7 @@ export class HivePost {
 
   get refs() {
     //TODO: Calculate refs on DB backend. Maybe through JS or aggregate function
-    return [`hive:${this.author}:${this.permlink}`]
+    return [`hive:${this.rawDoc.author}:${this.permlink}`]
   }
 
   get post_type() {
