@@ -50,6 +50,7 @@ export interface PostStruct {
     }
 
     app_metadata: {
+        types?: string[]
         "spkvideo"?: {
             authority_signed?: boolean //Signed by the @threespeak account and thus uploaded through our account.
             storage_type?: "legacy" | "thumbnail_ipfs" | "ipfs"
