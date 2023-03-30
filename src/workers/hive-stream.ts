@@ -645,8 +645,8 @@ void (async () => {
                     obj_set(calculatedMetadata, "app_metadata.spkvideo.storage_type", storage_type)
                   }
 
-                  obj_set(calculatedMetadata, "app_metadata.types", Object.keys(calculatedMetadata.app_metadata))
-                  obj_set(calculatedMetadata, "app_metadata.app", json_metadata.app.split('/')[0])
+                  obj_set(calculatedMetadata, "app_metadata.types", Object.keys(calculatedMetadata.app_metadata || {}))
+                  obj_set(calculatedMetadata, "app_metadata.app", json_metadata?.app?.split('/')[0] || null)
                   
                   if(op[1].parent_author !== "") {
                     flags.push('comment')
