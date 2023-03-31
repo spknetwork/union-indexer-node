@@ -3,7 +3,7 @@ import EventEmitter from 'events'
 import { BlockchainMode, BlockchainStreamOptions, Client } from '@hiveio/dhive'
 import Pushable from 'it-pushable'
 
-export const HiveClient = new Client(process.env.HIVE_HOST?.split(',') || ["https://api.deathwing.me"])
+export const HiveClient = new Client(process.env.HIVE_HOST?.split(',') || ["https://hive-api.3speak.tv", 'https://anyx.io'])
 
 export const OFFCHAIN_HOST = process.env.OFFCHAIN_HOST || "https://us-01.infra.3speak.tv/v1/graphql"
 
@@ -11,13 +11,15 @@ export const CERAMIC_HOST = process.env.CERAMIC_HOST || "https://ceramic.3speak.
 
 export async function fastStream(streamOpts: {startBlock: number, endBlock?: number}) {
     const PQueue = (await import('p-queue')).default
-    const queue = new PQueue({ concurrency: 45 })
+    const starting_concurency = 5;
+    const target_concurrency = 120;
+    const queue = new PQueue({ concurrency: starting_concurency })
     if(!streamOpts.endBlock) {
         const currentBlock = await HiveClient.blockchain.getCurrentBlock()
         const block_height = parseInt(currentBlock.block_id.slice(0, 8), 16)
         streamOpts.endBlock = block_height;
     }
-    let setSize = 30
+    let setSize = 8
     //let startBlock = 42837;
     //Use 30874325 in the state store (database) to parse from the beginning of 3speak
     let endSet = (streamOpts.endBlock - streamOpts.startBlock) / setSize
@@ -64,6 +66,12 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
         }
       }
     }, 1)
+
+    setInterval(() => {
+      if(queue.concurrency < target_concurrency) {
+        queue.concurrency = queue.concurrency + 1;
+      }
+    }, 1000)
   
     const startStream = async () => {
       let finalBlock;
@@ -107,7 +115,9 @@ export async function fastStream(streamOpts: {startBlock: number, endBlock?: num
               })
           })
         })
-        await queue.onSizeLessThan(1250)
+        if(queue.pending === queue.concurrency && queue.size > 600) {
+          await queue.onSizeLessThan(240)
+        }
         if(streamPaused === true) {
           queue.pause()
           await new Promise(async (resolve) => {
