@@ -9,11 +9,13 @@ export class BackgroundCore {
   communityDb: any
   posts: Collection<PostStruct>
   ceramic: any
+  profilesDb: Collection
 
   constructor() {
     this.communityRefresh = this.communityRefresh.bind(this)
     this.offchainIdRefresh = this.offchainIdRefresh.bind(this)
     this.postStats = this.postStats.bind(this)
+    this.scoreChannels = this.scoreChannels.bind(this)
   }
 
   async createOffchainId(post: PostStruct) {}
@@ -143,6 +145,106 @@ export class BackgroundCore {
     }
   }
 
+  async scoreChannels() {
+    // const firstCreators =  await posts.distinct('author', {
+  //   'json_metadata.app': { $regex: '3speak/' },
+  //   "video.first_upload": true
+  // })
+  // console.log('Number of first authors', firstCreators.length)
+  // for (let author of await posts.distinct('author', {
+  //   'json_metadata.app': { $regex: '3speak/' },
+  //   author: {$nin: firstCreators}
+  // })) {
+  //   await posts.findOneAndUpdate({
+  //     'json_metadata.app': { $regex: '3speak/' },
+  //     author
+  //   }, {
+  //     $set: {
+  //       'video.first_upload': true
+  //     }
+  //   }, {
+  //     sort: {
+  //       created_at: 1
+  //     }
+  //   })
+  //   // console.log(creator)
+  // }
+
+  const activeCreators = []
+
+  const videosAll = await this.posts
+    .aggregate([
+      {
+        $match: {
+          //   status: 'published'
+          //   created_at: {
+          //     // $gt: moment().subtract('1', 'month')
+          //   },
+          'app_metadata.app': '3speak' 
+        },
+      },
+      {
+        $project: {
+          author: 1,
+          _id: 1,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          author: { $addToSet: '$author' },
+        },
+      },
+    ])
+    .toArray()
+  console.log(videosAll)
+
+  for (let author of videosAll[0].author) {
+    // console.log(creator)
+    const videos = await this.posts.find({
+    //   created_: { $gt: moment().subtract('1', 'month') },
+      author: author,
+      'app_metadata.app': '3speak' 
+    })
+
+    let totalComments = 0;
+    let totalVotes = 0;
+    for await (let vid of videos) {
+    //   console.log(vid)
+      const firstLevelComments = await this.posts.countDocuments({
+        parent_author: vid.author,
+        parent_permlink: vid.permlink,
+      })
+
+      totalVotes = totalVotes + vid.stats?.num_votes || 0;
+
+      //TODO: Do recursive comments
+      totalComments = totalComments + firstLevelComments
+    }
+    // console.log(totalComments / (totalVotes || 1))
+    const score = (totalComments * 3) + (totalVotes * 0.1)
+    if(score > 0) {
+        activeCreators.push(author)
+        await this.profilesDb.findOneAndUpdate({
+            username: author
+        }, {
+            $set: {
+                score
+            }
+        })
+    }
+  }
+  await this.profilesDb.updateMany({
+    username: {
+      $nin: activeCreators
+    }
+  }, {
+    $set: {
+        score: 0
+    }
+  })
+  }
+
   ensureNotRunning(name) {
 
 
@@ -151,6 +253,7 @@ export class BackgroundCore {
   async start() {
     const db = mongo.db('spk-union-indexer')
     this.posts = db.collection('posts')
+    this.profilesDb = db.collection('profiles')
     this.communityDb = db.collection('communities')
     await mongo.connect()
     const { CeramicClient } = await import('@ceramicnetwork/http-client')
