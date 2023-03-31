@@ -30,7 +30,7 @@ services:
     command: npm run start-worker:hive-events
     environment:
       MONGO_HOST: mongo:27017
-      HIVE_HOST: "https://api.deathwing.me"
+      HIVE_HOST: "https://hive-api.3speak.tv"
   background-scripts:
     image: union-indexer-node
     restart: always
