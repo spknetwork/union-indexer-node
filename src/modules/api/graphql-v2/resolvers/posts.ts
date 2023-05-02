@@ -71,7 +71,7 @@ export class HivePost {
     if (this.rawDoc.TYPE === 'HIVE') {
       return 'HivePost'
     }
-    if (this.rawDoc.TYPE === 'CERAMIC') {
+    if (this.rawDoc.__t === 'post_ceramic') {
       return 'CeramicPost'
     }
   }
