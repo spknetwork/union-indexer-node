@@ -33,7 +33,13 @@ export class CoreService {
       id: "offchaindb-sync"
     })
 
-    let startTs = new Timestamp(lastTsDb.lastTs)
+    let startTs
+    if(lastTsDb) {
+      startTs = new Timestamp(lastTsDb.lastTs)
+      
+    } else {
+      startTs = new Timestamp({t: 0, i: 0})
+    }
 
     setInterval(async() => {
       await this.streamState.findOneAndUpdate({
