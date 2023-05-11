@@ -133,6 +133,7 @@ export const Resolvers = {
         },
         {
           limit: args.pagination?.limit || 100,
+          skip: args.pagination?.skip, 
           sort: {
             created_at: -1,
           },
@@ -169,6 +170,7 @@ export const Resolvers = {
         },
         {
           limit: args.pagination?.limit || 100,
+          skip: args.pagination?.skip,
           sort: {
             "stats.num_comments": -1
           },
