@@ -1,7 +1,7 @@
 import Axios from 'axios'
 import { HiveClient, OFFCHAIN_HOST } from '../../../../utils'
-import { HiveProfile } from '../../graphql-v1/resolvers/profiles'
 import { indexerContainer } from '../../index'
+import { HiveProfile } from './profiles'
 
 export class HivePost {
   rawDoc: any

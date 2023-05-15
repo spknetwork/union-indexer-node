@@ -1,7 +1,7 @@
 import moment from 'moment'
-import { HiveProfile } from '../../graphql-v1/resolvers/profiles'
 import { indexerContainer } from '../../index'
 import { HivePost } from './posts'
+import { HiveProfile } from './profiles'
 
 export function TransformArgToMongodb(args: any) {
   if (!args) {
