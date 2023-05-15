@@ -116,7 +116,11 @@ export const Resolvers = {
       permlink: args.permlink
     })
 
-    outPut['__typename'] = 'HivePost'
+
+    if(!outPut) {
+      return null
+    }
+
     return new HivePost(outPut)
   },
   async socialFeed(_, args) {

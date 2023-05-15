@@ -279,7 +279,7 @@ export const Schema = `
     }
 
     type Query {
-        socialPost(author: String, permlink: String): [MergedPost]
+        socialPost(author: String, permlink: String): MergedPost
         # Latest feed of content
         socialFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
         trendingFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
