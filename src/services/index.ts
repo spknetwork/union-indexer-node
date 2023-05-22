@@ -64,7 +64,7 @@ export class CoreService {
           
         const updatedFields = Object.keys((record as any).updateDescription?.updatedFields || []);
         //Ensure collection is graph.docs & ensure we only process large updates rather than basic metadata changes
-        if ((record as any).ns.coll === 'graph.docs' && (updatedFields[0] !== 'last_pinged' || updatedFields.length !== 1)) {
+        if ((record as any).ns.coll === 'graph.docs' && (updatedFields[0] !== 'last_pinged' || updatedFields.length !== 1) && record.operationType !== 'delete') {
           if (fullDocument.content) {
             const content = fullDocument.content;
 
