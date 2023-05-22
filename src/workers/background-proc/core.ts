@@ -130,6 +130,8 @@ export class BackgroundCore {
             $set: {
               title: communityInfo.title,
               about: communityInfo.about,
+              description: communityInfo.description,
+              flag_text: communityInfo.flag_text,
               lang: communityInfo.lang,
               is_nsfw: communityInfo.is_nsfw,
               subscribers: communityInfo.subscribers, //Redo this at some point to be an aggregate function
@@ -140,7 +142,7 @@ export class BackgroundCore {
           },
         )
       } catch (ex) {
-        console.log(ex)
+        // console.log(ex)
       }
     }
   }
