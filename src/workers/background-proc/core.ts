@@ -93,9 +93,7 @@ export class BackgroundCore {
               itm.author,
               itm.permlink,
             ])
-            total_reward =
-              Number(data.total_payout_value.split(' ')[0]) +
-              Number(data.curator_payout_value.split(' ')[0])
+            total_reward = data.last_payout <= "1970-01-01T00:00:00" ? parseFloat(data.pending_payout_value) : parseFloat(data.total_payout_value) + parseFloat(data.curator_payout_value)
             total_votes = data.net_votes
           } catch (ex) {
             // console.log(Object.values(ex.jse_info).join(), [itm.author, itm.permlink])
