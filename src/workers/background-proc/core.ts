@@ -1,9 +1,22 @@
+import { Client } from '@hiveio/dhive'
 import { Collection } from 'mongodb'
 import NodeSchedule from 'node-schedule'
 import { mongo } from '../../services/db'
 import { createPostStreamID } from '../../services/streamBridge'
 import { PostStruct } from '../../types/posts'
 import { CERAMIC_HOST, HiveClient } from '../../utils'
+
+export const HiveClient2 = new Client([
+  'https://hive-api.3speak.tv',
+  'https://api.hive.blog',
+  'https://api.openhive.network',
+  'https://anyx.io',
+  'https://hived.privex.io',
+  'https://rpc.ausbit.dev',
+  'https://hived.emre.sh',
+  'https://api.deathwing.me',
+  'https://api.c0ff33a.uk'
+])
 
 export class BackgroundCore {
   communityDb: any
@@ -76,7 +89,7 @@ export class BackgroundCore {
         let total_votes = 0
         if ((itm as any).TYPE === 'HIVE') {
           try {
-            const data = await HiveClient.call('condenser_api', 'get_content', [
+            const data = await HiveClient2.call('condenser_api', 'get_content', [
               itm.author,
               itm.permlink,
             ])
