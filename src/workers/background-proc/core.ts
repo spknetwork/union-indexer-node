@@ -29,6 +29,7 @@ export class BackgroundCore {
     this.offchainIdRefresh = this.offchainIdRefresh.bind(this)
     this.postStats = this.postStats.bind(this)
     this.scoreChannels = this.scoreChannels.bind(this)
+    this.pullAllAccounts = this.pullAllAccounts.bind(this)
   }
 
   async createOffchainId(post: PostStruct) {}
@@ -69,21 +70,21 @@ export class BackgroundCore {
     const items = await this.posts.find({
       $or: [
         {
-          'app_metadata.app': { $in: ['3speak'] },
           need_stat_update: true,
         },
         {
-          'app_metadata.app': { $in: ['3speak'] },
           need_stat_update: {
             $exists: false,
           },
         },
       ],
+    }, {
+      limit: 6000
     })
+
 
     for await (let itm of items) {
       queue.add(async () => {
-        //console.log(itm)
 
         let total_reward = null
         let total_votes = 0
@@ -95,26 +96,28 @@ export class BackgroundCore {
             ])
             total_reward = data.last_payout <= "1970-01-01T00:00:00" ? parseFloat(data.pending_payout_value) : parseFloat(data.total_payout_value) + parseFloat(data.curator_payout_value)
             total_votes = data.net_votes
+            const num_comments = await this.posts.countDocuments({
+              parent_author: itm.author,
+              parent_permlink: itm.permlink,
+            })
+    
+            // console.log('needs stats update done', itm.permlink)
+            await this.posts.findOneAndUpdate({
+                _id: itm._id
+            }, {
+              $set: {
+                'stats.num_comments': num_comments,
+                'stats.num_votes': total_votes,
+                'stats.total_hive_reward': total_reward,
+                need_stat_update: false,
+              },
+            })
           } catch (ex) {
+            // console.log(Object.values(ex.jse_info).join())
             // console.log(Object.values(ex.jse_info).join(), [itm.author, itm.permlink])
           }
         }
 
-        const num_comments = await this.posts.countDocuments({
-          parent_author: itm.author,
-          parent_permlink: itm.permlink,
-        })
-
-        await this.posts.findOneAndUpdate({
-            _id: itm._id
-        }, {
-          $set: {
-            'stats.num_comments': num_comments,
-            'stats.num_votes': total_votes,
-            'stats.total_hive_reward': total_reward,
-            need_stat_update: false,
-          },
-        })
       })
       await queue.onSizeLessThan(2500)
     }
@@ -263,6 +266,67 @@ export class BackgroundCore {
 
   }
 
+  /**
+   * Only handles first time viewing.. Afterwards 
+   */
+  async pullAllAccounts() {
+    const allAccountsLocally = await this.posts.distinct('author')
+
+    let profilesToQuery = []
+    for(let author of allAccountsLocally) {
+      const profile = await this.profilesDb.findOne({
+        username: author
+      })
+      if(!profile) {
+        if(profilesToQuery.length >= 20) {
+          const profilesHive = await HiveClient.database.getAccounts(profilesToQuery)
+  
+          for(let profileData of profilesHive) {
+
+            const json_metadata = (profileData as any).posting_json_metadata || (profileData as any).json_metadata
+            if(!json_metadata) {
+              continue;
+            }
+    
+            try {
+              const posting_json_metadata = JSON.parse(json_metadata)
+                  
+              if(!posting_json_metadata.profile) {
+                continue;
+              }
+              await this.profilesDb.findOneAndUpdate({
+                _id: `hive/${profileData.name}`
+              }, {
+                $set: {
+                  username: profileData.name,
+                  TYPE: "HIVE",
+                  displayName: posting_json_metadata.profile?.name,
+                  about: posting_json_metadata.profile?.about,
+                  location: posting_json_metadata.profile?.location,
+                  website: posting_json_metadata.profile?.website,
+                  "extra.pinned_post": posting_json_metadata.profile?.pinned,
+                  "images.avatar": posting_json_metadata.profile?.profile_image,
+                  "images.cover": posting_json_metadata.profile?.cover_image,
+                  "did": posting_json_metadata.did,
+                }
+              }, {
+                upsert: true,
+                retryWrites: true
+              })
+            } catch {
+              
+            }
+          }
+  
+          profilesToQuery = []
+        } else {
+          profilesToQuery.push(author)
+        }
+
+      }
+    }
+  }
+
   async start() {
     const db = mongo.db('spk-union-indexer')
     this.posts = db.collection('posts')
@@ -272,8 +336,10 @@ export class BackgroundCore {
     const { CeramicClient } = await import('@ceramicnetwork/http-client')
     this.ceramic = new CeramicClient(CERAMIC_HOST)
 
+    NodeSchedule.scheduleJob('0 */6 * * *', this.pullAllAccounts)
     NodeSchedule.scheduleJob('* * * * *', this.communityRefresh)
     NodeSchedule.scheduleJob('* * * * *', this.postStats)
     NodeSchedule.scheduleJob('* * * * *', this.offchainIdRefresh)
+    // this.postStats()
   }
 }
