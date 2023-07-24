@@ -163,6 +163,13 @@ export const Resolvers = {
       }
     })
 
+    let sortBy;
+    if(args.trendingBy === "PAYOUT") {
+      sortBy = 'stats.total_hive_reward'
+    } else {
+      sortBy = 'stats.num_comments'
+    }
+
     const outPut = await indexerContainer.self.posts
       .find(
         {
@@ -176,7 +183,7 @@ export const Resolvers = {
           limit: args.pagination?.limit || 100,
           skip: args.pagination?.skip,
           sort: {
-            "stats.num_comments": -1
+            [sortBy]: -1
           },
         },
       )

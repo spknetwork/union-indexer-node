@@ -240,6 +240,11 @@ export const Schema = `
         total_active_creators: Int
     }
 
+    enum TrendingByType {
+        COMMENTS
+        PAYOUT
+    }
+
     input WhereField {
         _regex: String
         _eq: String
@@ -282,7 +287,7 @@ export const Schema = `
         socialPost(author: String, permlink: String): MergedPost
         # Latest feed of content
         socialFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
-        trendingFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
+        trendingFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions, trendingBy:TrendingByType): FeedOutput
 
         relatedFeed(author: String, permlink: String, pagination: PaginationOptions): FeedOutput
 
