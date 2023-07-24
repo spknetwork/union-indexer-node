@@ -18,7 +18,7 @@ export const Schema = `
     type AuthorBase {
         id: String
         username: String
-        profile: JSON
+        profile: MergedProfile
     }
     
     type JsonMetadata {
