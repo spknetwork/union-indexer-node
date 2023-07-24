@@ -91,7 +91,7 @@ export class HiveProfile {
         //     }
         // }
 
-        console.log('account data', account)
+        
 
         if(!account) {
             return null;
