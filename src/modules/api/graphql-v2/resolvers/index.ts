@@ -102,7 +102,7 @@ async function TransformFeedArgs(args: any) {
         }).toArray()
 
         query["author"] = {
-          $in: following
+          $in: following.map(e => e.following)
         }
       }
     }
