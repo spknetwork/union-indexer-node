@@ -222,9 +222,9 @@ export const Resolvers = {
     }
   },
   async profile(_, args) {
-    if(args.username) {
+    if(args.id || args.username) {
       return await HiveProfile.run({
-          username: args.username
+          username: args.id || args.username
       })   
     }
 
