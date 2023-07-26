@@ -5,6 +5,7 @@ import { mongo } from '../../services/db'
 import { createPostStreamID } from '../../services/streamBridge'
 import { PostStruct } from '../../types/posts'
 import { CERAMIC_HOST, HiveClient } from '../../utils'
+import Axios from 'axios'
 
 export const HiveClient2 = new Client([
   'https://hive-api.3speak.tv',
@@ -18,6 +19,11 @@ export const HiveClient2 = new Client([
   'https://api.c0ff33a.uk'
 ])
 
+interface VideoSize {
+  height: number;
+  width: number;
+}
+
 export class BackgroundCore {
   communityDb: any
   posts: Collection<PostStruct>
@@ -26,6 +32,7 @@ export class BackgroundCore {
 
   constructor() {
     this.communityRefresh = this.communityRefresh.bind(this)
+    this.updateHeightWeight = this.updateHeightWeight.bind(this)
     this.offchainIdRefresh = this.offchainIdRefresh.bind(this)
     this.postStats = this.postStats.bind(this)
     this.scoreChannels = this.scoreChannels.bind(this)
@@ -120,6 +127,68 @@ export class BackgroundCore {
 
       })
       await queue.onSizeLessThan(2500)
+    }
+    await queue.onIdle()
+  }
+
+  async getVideoSize(url: string): Promise<VideoSize> {
+    const text = await Axios.get(url);
+    const textData = text.data;
+    console.log(textData);
+    let regex = /RESOLUTION=(.+),/g;
+    let found = textData.match(regex);
+    if (found === null || found.length === 0) {
+      regex = /RESOLUTION=(.+)\n/g;
+      found = textData.match(regex);
+    }
+    const size = found[0].replace('RESOLUTION=', '').replace(',', '').replace('\n', '');
+    console.log(`Size ${size}`);
+    const sizeComps = size.split(`x`);
+    return {
+      width: parseInt(sizeComps[0]),
+      height: parseInt(sizeComps[1]),
+    }
+  }
+
+  async updateHeightWeight() {
+    const PQueue = (await import('p-queue')).default
+    const queue = new PQueue({ concurrency: 50 })
+
+    // Step 1. Find all posts having 3speak as app name and height-width is null (not updated)
+    const items = await this.posts.find({
+      parent_author: "",
+      "json_metadata.app": {
+        '$regex': '3speak'
+      }, 
+      height: { $eq: null },
+      width: { $eq: null },
+    }, {
+      limit: 2000
+    })
+
+    // Step 2. Find Play URL for each item, and get video size - height, width & update it.
+    for await (let itm of items) {
+      queue.add(async () => {
+        // Step 2.1. get possible play url
+        let play_url = (itm.json_metadata?.video?.info?.sourceMap || []).find(
+          (e) => e.type === 'video',
+        )?.url
+        play_url = play_url
+          ? play_url
+          : `https://threespeakvideo.b-cdn.net/${itm.permlink}/default.m3u8`
+        if (play_url.startsWith('ipfs://')) {
+          play_url = `https://ipfs-3speak.b-cdn.net/ipfs/${play_url.replace("ipfs://","")}`;
+        }
+        // Step 2.2 get video size.
+        const size = await this.getVideoSize(play_url);
+
+        // Step 2.3 Update in the db
+        await this.posts.findOneAndUpdate(
+          { _id: itm._id }, 
+          { $set: { 'height': size.height, 'width': size.width } }
+        )
+      })
+      await queue.onSizeLessThan(1000)
     }
     await queue.onIdle()
   }
@@ -338,6 +407,7 @@ export class BackgroundCore {
 
     NodeSchedule.scheduleJob('0 */6 * * *', this.pullAllAccounts)
     NodeSchedule.scheduleJob('* * * * *', this.communityRefresh)
+    NodeSchedule.scheduleJob('*/15 * * * *', this.updateHeightWeight)
     NodeSchedule.scheduleJob('* * * * *', this.postStats)
     NodeSchedule.scheduleJob('* * * * *', this.offchainIdRefresh)
     // this.postStats()
