@@ -160,8 +160,8 @@ export class BackgroundCore {
       "json_metadata.app": {
         '$regex': '3speak'
       }, 
-      height: { $eq: null },
-      width: { $eq: null },
+      "json_metadata.video.info.height": { $eq: null },
+      "json_metadata.video.info.width": { $eq: null },
     }, {
       limit: 2000
     })
@@ -185,7 +185,7 @@ export class BackgroundCore {
         // Step 2.3 Update in the db
         await this.posts.findOneAndUpdate(
           { _id: itm._id }, 
-          { $set: { 'height': size.height, 'width': size.width } }
+          { $set: { 'json_metadata.video.info.height': size.height, 'json_metadata.video.info.width': size.width } }
         )
       })
       await queue.onSizeLessThan(1000)
@@ -407,7 +407,7 @@ export class BackgroundCore {
 
     NodeSchedule.scheduleJob('0 */6 * * *', this.pullAllAccounts)
     NodeSchedule.scheduleJob('* * * * *', this.communityRefresh)
-    NodeSchedule.scheduleJob('*/15 * * * *', this.updateHeightWeight)
+    NodeSchedule.scheduleJob('*/10 * * * *', this.updateHeightWeight)
     NodeSchedule.scheduleJob('* * * * *', this.postStats)
     NodeSchedule.scheduleJob('* * * * *', this.offchainIdRefresh)
     // this.postStats()
