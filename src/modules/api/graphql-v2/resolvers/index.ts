@@ -196,6 +196,8 @@ export const Resolvers = {
       }
   },
   async relatedFeed(_, args) {
+    const query = await TransformFeedArgs(args)
+    
     const postContent = await indexerContainer.self.posts.findOne({
       permlink: args.permlink,
       author: args.author
@@ -204,11 +206,13 @@ export const Resolvers = {
     let OrQuery = []
 
     OrQuery.push({
+      ...query,
       tags: {$in: postContent.tags} 
     })
     
     if(postContent.parent_author === "") {
       OrQuery.push({
+        ...query,
         parent_permlink: postContent.parent_permlink
       })
     }
