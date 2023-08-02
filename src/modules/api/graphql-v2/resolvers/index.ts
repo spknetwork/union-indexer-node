@@ -78,6 +78,10 @@ async function TransformFeedArgs(args: any) {
     if (args.feedOptions?.byType) {
       query['app_metadata.types'] = TransformArgToMongodb(args.feedOptions.byType)
     }
+    
+    if (args.feedOptions?.byLang) {
+      query['json_metadata.video.info.lang'] = TransformArgToMongodb(args.feedOptions.byLang)
+    }
 
     if (!args.feedOptions?.includeCeramic) {
       query['TYPE'] = {
@@ -196,6 +200,8 @@ export const Resolvers = {
       }
   },
   async relatedFeed(_, args) {
+    const query = await TransformFeedArgs(args)
+    
     const postContent = await indexerContainer.self.posts.findOne({
       permlink: args.permlink,
       author: args.author
@@ -204,11 +210,13 @@ export const Resolvers = {
     let OrQuery = []
 
     OrQuery.push({
+      ...query,
       tags: {$in: postContent.tags} 
     })
     
     if(postContent.parent_author === "") {
       OrQuery.push({
+        ...query,
         parent_permlink: postContent.parent_permlink
       })
     }
