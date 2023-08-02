@@ -119,11 +119,11 @@ export class HivePost {
     let hasWidth = false
     let height = 0
     let width = 0
-    if (json_metadata?.video?.info?.height !== null && json_metadata?.video?.info?.width !== null) {
+    if (this.rawDoc.app_metadata?.spkvideo?.height !== null && this.rawDoc.app_metadata?.spkvideo?.width !== null) {
         hasHeight = true
         hasWidth = true
-        height = json_metadata?.video?.info?.height
-        width = json_metadata?.video?.info?.width
+        height = this.rawDoc.app_metadata?.spkvideo?.height
+        width = this.rawDoc.app_metadata?.spkvideo?.width
     }
     return {
       thumbnail_url: images.pop() || thumbnail_url,

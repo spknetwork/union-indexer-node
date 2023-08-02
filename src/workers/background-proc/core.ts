@@ -160,8 +160,8 @@ export class BackgroundCore {
       "json_metadata.app": {
         '$regex': '3speak'
       }, 
-      "json_metadata.video.info.height": { $eq: null },
-      "json_metadata.video.info.width": { $eq: null },
+      "app_metadata.spkvideo.height": { $eq: null },
+      "app_metadata.spkvideo.width": { $eq: null },
     }, {
       limit: 2000
     })
@@ -185,7 +185,7 @@ export class BackgroundCore {
         // Step 2.3 Update in the db
         await this.posts.findOneAndUpdate(
           { _id: itm._id }, 
-          { $set: { 'json_metadata.video.info.height': size.height, 'json_metadata.video.info.width': size.width } }
+          { $set: { 'app_metadata.spkvideo.height': size.height, 'app_metadata.spkvideo.width': size.width } }
         )
       })
       await queue.onSizeLessThan(1000)
