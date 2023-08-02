@@ -182,28 +182,5 @@ export class CoreService {
     } catch (ex) {
       console.log(ex)
     }
-
-    // try {
-    //   await this.streamState.createIndex(
-    //     {
-    //       key: 1,
-    //     },
-    //     {
-    //       unique: true,
-    //     },
-    //   )
-    // } catch {}
-
-    // try {
-    //   await this.delegatedAuthorityDb.createIndex({
-    //     to: -1,
-    //   })
-    // } catch {}
-
-    // try {
-    //   await this.delegatedAuthorityDb.createIndex({
-    //     from: -1,
-    //   })
-    // } catch {}
   }
 }
