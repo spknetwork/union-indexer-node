@@ -133,7 +133,7 @@ export class HivePost {
       duration: json_metadata.video.info.duration,
       height: height,
       width: width,
-      is_short: json_metadata.video.info.duration < 90 && hasHeight && hasWidth && height > width,
+      is_short: json_metadata.video.info.duration <= 90 && hasHeight && hasWidth && height > width,
       //Body without HIVE post headers such as "Watch on 3Speak"
       body: this.body.split('---\n\n')[1],
     }
