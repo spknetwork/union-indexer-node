@@ -115,13 +115,25 @@ export class HivePost {
     console.log('possible_play_url', possible_play_url, images)
 
     const thumbnail_url = `https://media.3speak.tv/${this.permlink}/thumbnails/default.png`
+    let hasHeight = false
+    let hasWidth = false
+    let height = 0
+    let width = 0
+    if (this.rawDoc.app_metadata?.spkvideo?.height !== null && this.rawDoc.app_metadata?.spkvideo?.width !== null) {
+        hasHeight = true
+        hasWidth = true
+        height = this.rawDoc.app_metadata?.spkvideo?.height
+        width = this.rawDoc.app_metadata?.spkvideo?.width
+    }
     return {
       thumbnail_url: images.pop() || thumbnail_url,
       play_url: possible_play_url
         ? possible_play_url
         : `https://threespeakvideo.b-cdn.net/${this.rawDoc.permlink}/default.m3u8`,
       duration: json_metadata.video.info.duration,
-      is_short: json_metadata.video.info.duration < 60,
+      height: height,
+      width: width,
+      is_short: json_metadata.video.info.duration <= 90 && hasHeight && hasWidth && height > width,
       //Body without HIVE post headers such as "Watch on 3Speak"
       body: this.body.split('---\n\n')[1],
     }
