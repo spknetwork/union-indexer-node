@@ -281,6 +281,7 @@ export const Schema = `
         byCommunity: WhereField
         byApp: WhereField
         byType: WhereField
+        byLang: WhereField
     }
 
     type Query {

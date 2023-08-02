@@ -78,6 +78,10 @@ async function TransformFeedArgs(args: any) {
     if (args.feedOptions?.byType) {
       query['app_metadata.types'] = TransformArgToMongodb(args.feedOptions.byType)
     }
+    
+    if (args.feedOptions?.byLang) {
+      query['json_metadata.video.info.lang'] = TransformArgToMongodb(args.feedOptions.byLang)
+    }
 
     if (!args.feedOptions?.includeCeramic) {
       query['TYPE'] = {
