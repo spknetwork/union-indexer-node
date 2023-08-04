@@ -155,6 +155,37 @@ export const Resolvers = {
       }),
     }
   },
+  async searchFeed(_, args) {
+    const query = await TransformFeedArgs(args)
+
+
+    // console.log(JSON.stringify(query), query)
+    // console.log(, args)
+    const outPut = await indexerContainer.self.posts
+      .find(
+        {
+          ['$text']: {
+            $search: args.searchTerm
+          },
+          ...query,
+          TYPE: { $ne: 'CERAMIC' },
+        },
+        {
+          limit: args.pagination?.limit || 100,
+          skip: args.pagination?.skip, 
+          sort: {
+            created_at: -1,
+          },
+        },
+      )
+      .toArray()
+    return {
+      items: outPut.map((e) => {
+        e['__typename'] = 'HivePost'
+        return new HivePost(e)
+      }),
+    }
+  },
   async trendingFeed(_, args){
     const query = await TransformFeedArgs(args)
 
@@ -223,9 +254,8 @@ export const Resolvers = {
     
     const items = await indexerContainer.self.posts.aggregate([{
       $match: {
-        $or: OrQuery
-        
-      }
+        $or: OrQuery        
+      },
     }, {
       $sample: {
         size: args.pagination?.limit || 25
@@ -370,6 +400,8 @@ export const Resolvers = {
         args2['feedOptions']['byCommunity'] = {
           _eq: args.id
         }
+
+        
 
 
         return await Resolvers.trendingFeed(_, args2)
