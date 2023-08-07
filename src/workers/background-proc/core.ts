@@ -160,6 +160,7 @@ export class BackgroundCore {
         height: parseInt(sizeComps[1]),
       }
     } catch (e) {
+      console.log(`Error is ${e.message}`);
       // those which fail, doesn't have the valid URL for the video & video-posts are too old.
       // So, it is okay to set 0 for height & width.
       return {
