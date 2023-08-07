@@ -48,6 +48,10 @@ async function TransformFeedArgs(args: any) {
       query['app_metadata.types'] = 'spkvideo'
     }
 
+    if (args.spkvideo?.isShort) {
+      query['app_metadata.spkvideo.isShort'] = true
+    }
+
     if (args.feedOptions?.includeComments) {
       //Exclusively comments
       // query['flags'] = {

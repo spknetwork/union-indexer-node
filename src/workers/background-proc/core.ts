@@ -142,21 +142,30 @@ export class BackgroundCore {
   }
 
   async getVideoSize(url: string): Promise<VideoSize> {
-    const text = await Axios.get(url);
-    const textData = text.data;
-    console.log(textData);
-    let regex = /RESOLUTION=(.+),/g;
-    let found = textData.match(regex);
-    if (found === null || found.length === 0) {
-      regex = /RESOLUTION=(.+)\n/g;
-      found = textData.match(regex);
-    }
-    const size = found[0].replace('RESOLUTION=', '').replace(',', '').replace('\n', '');
-    console.log(`Size ${size}`);
-    const sizeComps = size.split(`x`);
-    return {
-      width: parseInt(sizeComps[0]),
-      height: parseInt(sizeComps[1]),
+    try {
+      const text = await Axios.get(url);
+      const textData = text.data;
+      console.log(textData);
+      let regex = /RESOLUTION=(.+),/g;
+      let found = textData.match(regex);
+      if (found === null || found.length === 0) {
+        regex = /RESOLUTION=(.+)\n/g;
+        found = textData.match(regex);
+      }
+      const size = found[0].replace('RESOLUTION=', '').replace(',', '').replace('\n', '');
+      console.log(`Size ${size}`);
+      const sizeComps = size.split(`x`);
+      return {
+        width: parseInt(sizeComps[0]),
+        height: parseInt(sizeComps[1]),
+      }
+    } catch (e) {
+      // those which fail, doesn't have the valid URL for the video & video-posts are too old.
+      // So, it is okay to set 0 for height & width.
+      return {
+        width: 0.0,
+        height: 0.0,
+      }
     }
   }
 
@@ -192,10 +201,22 @@ export class BackgroundCore {
         // Step 2.2 get video size.
         const size = await this.getVideoSize(play_url);
 
-        // Step 2.3 Update in the db
+        // Step 2.3 - get video duration
+        const duration = itm.json_metadata?.video?.info?.duration ?? 0.0
+
+        // Step 2.4 - is video a 3Shorts?
+        const isShort: boolean = duration <= 90.0 && size.height >= size.width;
+
+        // Step 2.5 Update in the db
         await this.posts.findOneAndUpdate(
           { _id: itm._id }, 
-          { $set: { 'app_metadata.spkvideo.height': size.height, 'app_metadata.spkvideo.width': size.width } }
+          { 
+            $set: { 
+              'app_metadata.spkvideo.height': size.height, 
+              'app_metadata.spkvideo.width': size.width,
+              'app_metadata.spkvideo.isShort': isShort,
+            } 
+          }
         )
       })
       await queue.onSizeLessThan(1000)
