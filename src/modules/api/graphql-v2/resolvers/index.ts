@@ -49,7 +49,7 @@ async function TransformFeedArgs(args: any) {
     }
 
     if (args.spkvideo?.isShort) {
-      query['app_metadata.spkvideo.isShort'] = true
+      query['app_metadata.spkvideo.is_short'] = true
     }
 
     if (args.feedOptions?.includeComments) {

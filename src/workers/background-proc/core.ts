@@ -214,7 +214,7 @@ export class BackgroundCore {
             $set: { 
               'app_metadata.spkvideo.height': size.height, 
               'app_metadata.spkvideo.width': size.width,
-              'app_metadata.spkvideo.isShort': isShort,
+              'app_metadata.spkvideo.is_short': isShort,
             } 
           }
         )
