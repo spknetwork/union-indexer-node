@@ -47,7 +47,7 @@ services:
     image: mongo:latest
     restart: always
     ports:
-      - 27027:27017
+      - 127.0.0.1:27027:27017
     networks:
       - union-indexer-network
     volumes:
