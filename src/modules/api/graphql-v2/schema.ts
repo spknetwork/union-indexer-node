@@ -125,6 +125,7 @@ export const Schema = `
         # Special: Linkage between Off-chain and On-chain mirrors
         refs: [String]
         stats: PostStats
+        hive_rewards: JSON
         off_chain_id: String
     }
 

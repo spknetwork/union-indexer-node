@@ -31,6 +31,17 @@ services:
     environment:
       MONGO_HOST: mongo:27017
       HIVE_HOST: "https://hive-api.3speak.tv"
+  hive-events-reindex:
+    image: union-indexer-node
+    restart: always
+    depends_on:
+      - union-indexer-node
+    networks:
+      - union-indexer-network
+    command: npm run start-worker:hive-events-reindex
+    environment:
+      MONGO_HOST: mongo:27017
+      HIVE_HOST: "https://hive-api.3speak.tv"
   background-scripts:
     image: union-indexer-node
     restart: always

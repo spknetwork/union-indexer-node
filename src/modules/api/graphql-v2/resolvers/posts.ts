@@ -129,6 +129,10 @@ export class HivePost {
     }
   }
 
+  get hive_rewards() {
+    return this.rawDoc.hive_rewards || null;
+  }
+
   async author() {
     return {
       id: this.rawDoc.author,

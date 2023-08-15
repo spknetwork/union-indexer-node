@@ -115,7 +115,17 @@ export class BackgroundCore {
               $set: {
                 'stats.num_comments': num_comments,
                 'stats.num_votes': total_votes,
-                'stats.total_hive_reward': total_reward,
+                'stats.num_up_votes': data.active_votes.filter(e => e.rshares > 0).length,
+                'stats.num_down_votes': data.active_votes.filter(e => e.rshares < 0).length,
+                
+                'hive_rewards.max_accepted_payout': data.max_accepted_payout,
+                'hive_rewards.max_cashout_time': data.max_cashout_time,
+                'hive_rewards.last_payout': data.last_payout,
+                'hive_rewards.cashout_time': data.cashout_time,
+                'hive_rewards.total_payout_value': data.total_payout_value,
+                'hive_rewards.curator_payout_value': data.curator_payout_value,
+
+
                 need_stat_update: false,
               },
             })
