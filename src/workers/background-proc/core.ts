@@ -130,15 +130,17 @@ export class BackgroundCore {
               },
             })
           } catch (ex) {
-            if(Object.values(ex.jse_info).join().includes('was deleted')) {
-              await this.posts.findOneAndUpdate({
-                  _id: itm._id
-              }, {
-                $set: {
-                  status: 'deleted',
-                  need_stat_update: false,
-                },
-              })
+            if(ex.jse_info) {
+              if(Object.values(ex.jse_info).join().includes('was deleted')) {
+                await this.posts.findOneAndUpdate({
+                    _id: itm._id
+                }, {
+                  $set: {
+                    status: 'deleted',
+                    need_stat_update: false,
+                  },
+                })
+              }
             }
             // console.log(Object.values(ex.jse_info).join())
             // console.log(Object.values(ex.jse_info).join(), [itm.author, itm.permlink])
