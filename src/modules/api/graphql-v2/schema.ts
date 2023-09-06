@@ -291,8 +291,8 @@ export const Schema = `
         socialFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
         trendingFeed(spkvideo: SpkVideoQuery, apps: WhereField, pagination: PaginationOptions, feedOptions: FeedOptions, trendingBy:TrendingByType): FeedOutput
 
-        relatedFeed(author: String, permlink: String, pagination: PaginationOptions, feedOptions: FeedOptions, spkvideo: SpkVideoQuery): FeedOutput
-        searchFeed(searchTerm: String, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
+        relatedFeed(spkvideo: SpkVideoQuery, author: String, permlink: String, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
+        searchFeed(spkvideo: SpkVideoQuery, searchTerm: String, pagination: PaginationOptions, feedOptions: FeedOptions): FeedOutput
 
         profile(id: String): MergedProfile
 
