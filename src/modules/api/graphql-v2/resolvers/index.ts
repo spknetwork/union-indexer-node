@@ -242,6 +242,10 @@ export const Resolvers = {
       author: args.author
     });
 
+    if(!postContent) {
+      throw new GraphQLError('Post does not exist or is not indexed')
+    }
+
     let OrQuery = []
 
     OrQuery.push({
