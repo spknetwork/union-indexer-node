@@ -142,7 +142,7 @@ export const Resolvers = {
       .find(
         {
           ...query,
-          TYPE: { $ne: 'CERAMIC' },
+          // TYPE: { $ne: 'CERAMIC' },
         },
         {
           limit: args.pagination?.limit || 100,
@@ -173,7 +173,7 @@ export const Resolvers = {
             $search: args.searchTerm
           },
           ...query,
-          TYPE: { $ne: 'CERAMIC' },
+          // TYPE: { $ne: 'CERAMIC' },
         },
         {
           limit: args.pagination?.limit || 100,
@@ -196,7 +196,7 @@ export const Resolvers = {
 
     const latestPost = await indexerContainer.self.posts.findOne({
       ...query,
-      TYPE: { $ne: 'CERAMIC' },
+      // TYPE: { $ne: 'CERAMIC' },
     }, {
       sort: {
         created_at: -1
@@ -214,7 +214,7 @@ export const Resolvers = {
       .find(
         {
           ...query,
-          TYPE: { $ne: 'CERAMIC' },
+          // TYPE: { $ne: 'CERAMIC' },
           created_at: {
             $gt: moment(latestPost?.created_at || new Date()).subtract('3', 'days').toDate()
           }
