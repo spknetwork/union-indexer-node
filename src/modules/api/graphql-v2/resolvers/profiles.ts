@@ -1,4 +1,8 @@
+import { mongoOffchan } from "../../../../services/db";
+import { CERAMIC_HOST } from "../../../../utils";
 import { indexerContainer } from "../../index";
+// import { StreamID } from '@ceramicnetwork/streamid'
+
 
 export class HiveProfile {
     rawBlob: any;
@@ -57,9 +61,9 @@ export class HiveProfile {
     }
     
     
-        get src() {
-            return this.rawBlob.TYPE
-        }
+    get src() {
+        return this.rawBlob.TYPE
+    }
         
 
     
@@ -98,5 +102,76 @@ export class HiveProfile {
         }
 
         return new HiveProfile(account);
+    }
+}
+
+export class CeramicProfile {
+    rawblob: any;
+    did: string
+
+    constructor(rawblob, did) {
+        this.rawblob = rawblob;
+        this.did = did;
+    }
+
+    get id() {
+        return this.did
+    }
+
+    get name() {
+        return this.rawblob.name
+    }
+
+    get location() {
+        return this.rawblob.location
+    }
+
+    get about() {
+        return this.rawblob.description
+    }
+
+    get website() {
+        return this.rawblob.url
+    }
+
+    get images() {
+        return {
+            avatar: this.rawblob.image?.original?.src,
+            background: this.rawblob.background?.original?.src
+        }
+    }
+
+    get src() {
+        return "CERAMIC"
+    }
+
+    get __typename() {
+        return "CeramicProfile"
+    }
+
+    static async run(args) {
+        const DIDDataStore = (await import('@glazed/did-datastore')).DIDDataStore
+        const DataModel = (await import('@glazed/datamodel')).DataModel
+        // const Core = (await import('@self.id/core')).Core
+        // const TileLoader = (await import('@glazed/tile-loader')).TileLoader
+        // const StreamID = (await import("@ceramicnetwork/streamid")).StreamID
+
+        const aliases = {
+            definitions: {
+                profile: 'kjzl6cwe1jw145cjbeko9kil8g9bxszjhyde21ob8epxuxkaon1izyqsu8wgcic',
+              },
+              schemas: {
+                Profile:
+                  'ceramic://k3y52l7qbv1frxt706gqfzmq6cbqdkptzk8uudaryhlkf6ly9vx21hqu4r6k1jqio',
+              },
+              tiles: {},
+          }
+          
+        const model = new DataModel({ ceramic: indexerContainer.self.ceramic, aliases })
+        const dataStore = new DIDDataStore({ ceramic: indexerContainer.self.ceramic, model })
+
+        const profile = await dataStore.get('profile', args.id)
+
+        return new CeramicProfile(profile, args.id)
     }
 }

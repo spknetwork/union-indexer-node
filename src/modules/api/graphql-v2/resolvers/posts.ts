@@ -1,7 +1,7 @@
 import Axios from 'axios'
 import { HiveClient, OFFCHAIN_HOST } from '../../../../utils'
 import { indexerContainer } from '../../index'
-import { HiveProfile } from './profiles'
+import { CeramicProfile, HiveProfile } from './profiles'
 
 export class HivePost {
   rawDoc: any
@@ -138,6 +138,11 @@ export class HivePost {
       id: this.rawDoc.author,
       username: this.rawDoc.author,
       profile: async () => {
+        if (this.rawDoc.__t === 'post_ceramic') {
+          return await CeramicProfile.run({
+            id: this.rawDoc.author,
+          })
+        }
         return await HiveProfile.run({
           username: this.rawDoc.author,
         })

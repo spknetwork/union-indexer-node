@@ -1,7 +1,8 @@
 import moment from 'moment'
 import { indexerContainer } from '../../index'
 import { HivePost } from './posts'
-import { HiveProfile } from './profiles'
+import { CeramicProfile, HiveProfile } from './profiles'
+import { GraphQLError } from 'graphql'
 
 export function TransformArgToMongodb(args: any) {
   if (!args) {
@@ -275,6 +276,11 @@ export const Resolvers = {
     }
   },
   async profile(_, args) {
+    if(args.id.startsWith('did')) {
+      return await CeramicProfile.run({
+        id: args.id
+      })
+    }
     if(args.id || args.username) {
       return await HiveProfile.run({
           username: args.id || args.username
