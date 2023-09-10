@@ -380,7 +380,7 @@ export const Resolvers = {
     if(!community) {
       return null;
     }
-    const roles = community.roles.map(e => {
+    const roles = community?.roles?.map(e => {
       const [username, role, title] = e;
       return {
         username, 
