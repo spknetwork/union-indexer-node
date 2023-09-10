@@ -391,7 +391,7 @@ export const Resolvers = {
     return {
       ...community,
       roles,
-      created_at: community.created_at.toISOString(),
+      created_at: community?.created_at?.toISOString(),
       latestFeed: async (args2) => {
 
         if(!args2['feedOptions']) {
