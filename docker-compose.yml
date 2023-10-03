@@ -12,6 +12,8 @@ services:
       - mongo
     depends_on:
       - mongo
+    env_file:
+      - .env
     networks:
       - union-indexer-network
     environment:
