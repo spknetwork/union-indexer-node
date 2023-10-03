@@ -12,14 +12,12 @@ services:
       - mongo
     depends_on:
       - mongo
-      - ipfs
     networks:
       - union-indexer-network
     environment:
       MONGO_HOST: mongo:27017
-      IPFS_HOST: ipfs:5001
       ENABLE_CORS: "true"
-      SPK_INDEXER_HOST: "https://us-01.infra.3speak.tv"
+      SPK_INDEXER_HOST: "https://offchain.us-02.infra.3speak.tv"
   hive-events-union:
     image: union-indexer-node
     restart: always
@@ -63,15 +61,6 @@ services:
       - union-indexer-network
     volumes:
       - ./data/mongodb:/data/db
-  ipfs:
-    container_name: ipfs_union
-    image: ipfs/go-ipfs:latest
-    entrypoint: ["echo", "Service IPFS disabled"]
-    command:
-      - daemon
-      - --enable-pubsub-experiment
-    networks:
-      - union-indexer-network
 networks:
   union-indexer-network:
     driver: bridge

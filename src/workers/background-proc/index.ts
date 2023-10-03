@@ -1,4 +1,5 @@
 import { BackgroundCore } from "./core"
+import 'dotenv/config'
 
 
 void (async () => {

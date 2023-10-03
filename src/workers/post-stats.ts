@@ -21,10 +21,10 @@ void (async () => {
     const items = await posts.find({
       $or: [{
         "json_metadata.app": {$regex: '3speak'}, 
-        need_stat_update: true
+        needs_stat_update: true
       }, {
         "json_metadata.app": {$regex: '3speak'}, 
-        need_stat_update: {
+        needs_stat_update: {
           $exists: false
         }
       }]
@@ -61,7 +61,7 @@ void (async () => {
             'stats.num_comments': num_comments,
             'stats.num_votes': total_votes,
             'stats.total_hive_reward': total_reward,
-            need_stat_update: false,
+            needs_stat_update: false,
           },
         })
       })

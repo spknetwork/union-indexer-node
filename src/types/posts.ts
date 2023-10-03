@@ -19,7 +19,7 @@ export interface PostStruct {
     //Internal calculation
 
     metadata_status: "processed" | "unprocessed"
-    need_stat_update: boolean
+    needs_stat_update: boolean
     
     //Stats calculated from on chain data
     stats?: {

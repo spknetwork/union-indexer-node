@@ -77,10 +77,10 @@ export class BackgroundCore {
     const items = await this.posts.find({
       $or: [
         {
-          need_stat_update: true,
+          needs_stat_update: true,
         },
         {
-          need_stat_update: {
+          needs_stat_update: {
             $exists: false,
           },
         },
@@ -117,16 +117,18 @@ export class BackgroundCore {
                 'stats.num_votes': total_votes,
                 'stats.num_up_votes': data.active_votes.filter(e => e.rshares > 0).length,
                 'stats.num_down_votes': data.active_votes.filter(e => e.rshares < 0).length,
+                'stats.total_hive_reward': total_reward,
                 
                 'hive_rewards.max_accepted_payout': data.max_accepted_payout,
                 'hive_rewards.max_cashout_time': data.max_cashout_time,
-                'hive_rewards.last_payout': data.last_payout,
                 'hive_rewards.cashout_time': data.cashout_time,
                 'hive_rewards.total_payout_value': data.total_payout_value,
                 'hive_rewards.curator_payout_value': data.curator_payout_value,
+                'hive_rewards.payout': total_reward,
+                'hive_rewards.payout_at': data.last_payout,
 
 
-                need_stat_update: false,
+                needs_stat_update: false,
               },
             })
           } catch (ex) {
@@ -137,7 +139,7 @@ export class BackgroundCore {
                 }, {
                   $set: {
                     status: 'deleted',
-                    need_stat_update: false,
+                    needs_stat_update: false,
                   },
                 })
               }

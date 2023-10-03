@@ -119,11 +119,11 @@ PostSchema.index(
 
 PostSchema.index(
   {
-    'need_stat_update': -1,
+    'needs_stat_update': -1,
   },
   {
     partialFilterExpression: {
-      'need_stat_update': {
+      'needs_stat_update': {
         $exists: true,
       },
     },

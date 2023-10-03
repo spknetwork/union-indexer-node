@@ -6,3 +6,10 @@ export interface DelegatedAuthority {
     trx_id: string
     block_height: number
 }
+
+interface SpkFollow {
+    id: 'spk.follow' | 'spk.unfollow'
+    json: {
+        did: string
+    }
+}
