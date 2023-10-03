@@ -231,7 +231,7 @@ void (async () => {
                   },
                   update: {
                     $set: {
-                      need_stat_update: true
+                      needs_stat_update: true
                     }
                   }
                 }
@@ -245,7 +245,7 @@ void (async () => {
               //   permlink: vote_op.permlink,
               // }).updateOne({
               //   $set: {
-              //     need_stat_update: true
+              //     needs_stat_update: true
               //   }
               // })
               // if(post) {
@@ -253,7 +253,7 @@ void (async () => {
               //     _id: post._id
               //   }, {
               //     $set: {
-              //       need_stat_update: true
+              //       needs_stat_update: true
               //     }
               //   })
               // }

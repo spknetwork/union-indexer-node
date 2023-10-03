@@ -87,7 +87,7 @@ export class CoreService {
               updated_at: fullDocument.updated_at,
               created_at: fullDocument.created_at,
               metadata_status: 'unprocessed',
-              need_stat_update: false,
+              needs_stat_update: false,
               state_control: {
                 version_id: fullDocument.version_id
               },
