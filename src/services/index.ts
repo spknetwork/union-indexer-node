@@ -103,7 +103,8 @@ export class CoreService {
               // },
               json_metadata: content?.json_metadata,
               app_metadata: {
-                types: []
+                types: [],
+                app: content?.json_metadata?.app?.split('/')[0] || null,
                 // spkvideo: {
                 //   authority_signed: false,
                 //   storage_type: 'legacy',
