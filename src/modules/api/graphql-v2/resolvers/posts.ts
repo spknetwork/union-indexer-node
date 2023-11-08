@@ -129,6 +129,10 @@ export class HivePost {
     }
   }
 
+  get stream_id() {
+    return this.rawDoc.id;
+  }
+
   get hive_rewards() {
     return this.rawDoc.hive_rewards || null;
   }
