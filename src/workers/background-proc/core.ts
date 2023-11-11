@@ -220,7 +220,7 @@ export class BackgroundCore {
         const duration = itm.json_metadata?.video?.info?.duration ?? 0.0
 
         // Step 2.4 - is video a 3Shorts?
-        const isShort: boolean = duration <= 90.0 && size.height >= size.width;
+        const isShort: boolean = duration <= 180.0 && size.height >= size.width;
 
         // Step 2.5 Update in the db
         await this.posts.findOneAndUpdate(
