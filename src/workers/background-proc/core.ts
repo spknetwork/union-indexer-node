@@ -205,7 +205,7 @@ export class BackgroundCore {
       queue.add(async () => {
         // Step 2.1. get possible play url
         let play_url = (itm.json_metadata?.video?.info?.sourceMap || []).find(
-          (e) => e.type === 'video',
+          (e) => e.type === 'video' || e.type === 'audio',
         )?.url
         play_url = play_url
           ? play_url
