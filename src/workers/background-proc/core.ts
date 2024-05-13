@@ -205,7 +205,7 @@ export class BackgroundCore {
       queue.add(async () => {
         // Step 2.1. get possible play url
         let play_url = (itm.json_metadata?.video?.info?.sourceMap || []).find(
-          (e) => e.type === 'video',
+          (e) => e.type === 'video' || e.type === 'audio',
         )?.url
         play_url = play_url
           ? play_url
@@ -220,7 +220,7 @@ export class BackgroundCore {
         const duration = itm.json_metadata?.video?.info?.duration ?? 0.0
 
         // Step 2.4 - is video a 3Shorts?
-        const isShort: boolean = duration <= 90.0 && size.height >= size.width;
+        const isShort: boolean = duration <= 180.0 && size.height >= size.width;
 
         // Step 2.5 Update in the db
         await this.posts.findOneAndUpdate(
