@@ -259,6 +259,8 @@ export const Schema = `
         _nin: [String!]
     }
 
+    
+
     input SpkVideoQuery {
         firstUpload: Boolean
         only: Boolean
@@ -271,7 +273,17 @@ export const Schema = `
         skip: Int
     }
 
+    input FeedOptinsOR {
+        byTag: WhereField
+        byCreator: WhereField
+        byPermlink: WhereField
+        byCommunity: WhereField
+        byApp: WhereField
+        byType: WhereField
+    }
+
     input FeedOptions {
+        _or: FeedOptinsOR
         includeComments: Boolean
         includeCeramic: Boolean
         byFollower: String 

@@ -38,6 +38,23 @@ function TransformNestedQuery(query: any, root_key: string): any {
   return out
 }
 
+const gqlNameMap: Record<string, string> = {
+  'byTag': 'tags',
+  'byCreator': 'author',
+  'byCommunity': 'parent_permlink',
+  'byApp': 'app_metadata.app',
+  'byType': 'app_metadata.types',
+  'byLang': 'json_metadata.video.info.lang',
+}
+
+
+function GraphqlNameToMongo(field: keyof typeof gqlNameMap, value) {
+  return {
+    name: gqlNameMap[field],
+    value: TransformArgToMongodb(value)
+  }
+}
+
 async function TransformFeedArgs(args: any) {
   let query = {} as any
 
@@ -88,6 +105,18 @@ async function TransformFeedArgs(args: any) {
       query['json_metadata.video.info.lang'] = TransformArgToMongodb(args.feedOptions.byLang)
     }
 
+    if(args.feedOptions._or) {
+      console.log(args.feedOptions._or)
+      query['$or'] = Object.entries(args.feedOptions._or).map(([key, val])=> {
+        const {name, value} = GraphqlNameToMongo(key, val)
+        return {
+          [name]: value
+        }
+      })
+    }
+
+    console.log('query is ', JSON.stringify(query, null, 2))
+
     if (!args.feedOptions?.includeCeramic) {
       query['TYPE'] = {
         $ne: 'CERAMIC',
@@ -115,6 +144,7 @@ async function TransformFeedArgs(args: any) {
         }
       }
     }
+    console.log(query)
     return query;
 }
 
