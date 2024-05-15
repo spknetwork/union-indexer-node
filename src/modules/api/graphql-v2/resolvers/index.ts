@@ -105,7 +105,7 @@ async function TransformFeedArgs(args: any) {
       query['json_metadata.video.info.lang'] = TransformArgToMongodb(args.feedOptions.byLang)
     }
 
-    if(args.feedOptions._or) {
+    if(args.feedOptions?._or) {
       console.log(args.feedOptions._or)
       query['$or'] = Object.entries(args.feedOptions._or).map(([key, val])=> {
         const {name, value} = GraphqlNameToMongo(key, val)
