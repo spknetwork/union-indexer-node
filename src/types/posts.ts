@@ -26,6 +26,12 @@ export interface PostStruct {
         num_comments?: number
         num_votes?: number
         total_hive_reward?: number
+        active_voters?: Array<{
+            voter: string
+            rshares: number
+            percent: number
+            weight: number
+        }>
     }
 
     //Ensuring we always write forward into the future. Conflict prevention

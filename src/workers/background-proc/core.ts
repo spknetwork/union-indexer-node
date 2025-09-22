@@ -118,6 +118,12 @@ export class BackgroundCore {
                 'stats.num_up_votes': data.active_votes.filter(e => e.rshares > 0).length,
                 'stats.num_down_votes': data.active_votes.filter(e => e.rshares < 0).length,
                 'stats.total_hive_reward': total_reward,
+                'stats.active_voters': data.active_votes.map(v => ({
+                  voter: v.voter,
+                  rshares: v.rshares,
+                  percent: v.percent,
+                  weight: v.weight,
+                })),
                 
                 'hive_rewards.max_accepted_payout': data.max_accepted_payout,
                 'hive_rewards.max_cashout_time': data.max_cashout_time,

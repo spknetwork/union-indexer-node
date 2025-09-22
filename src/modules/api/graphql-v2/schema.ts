@@ -27,10 +27,18 @@ export const Schema = `
         raw: JSON
     }
     
+    type Voter {
+      voter: String
+      rshares: Float
+      percent: Int
+      weight: Int
+    }
+    
     type PostStats {
         num_comments: Int
         num_votes: Int
         total_hive_reward: Float
+        active_voters: [Voter]
     }
 
     interface SocialPost {

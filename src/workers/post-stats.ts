@@ -36,6 +36,7 @@ void (async () => {
 
         let total_reward = null
         let total_votes = 0
+        let active_voters = []
         if (itm.TYPE === 'HIVE') {
           try {
             const data = await HiveClient.call('condenser_api', 'get_content', [
@@ -46,6 +47,7 @@ void (async () => {
               Number(data.total_payout_value.split(' ')[0]) +
               Number(data.curator_payout_value.split(' ')[0])
             total_votes = data.net_votes
+            active_voters = data.active_votes
           } catch(ex) {
             // console.log(Object.values(ex.jse_info).join(), [itm.author, itm.permlink])
           }
@@ -61,6 +63,7 @@ void (async () => {
             'stats.num_comments': num_comments,
             'stats.num_votes': total_votes,
             'stats.total_hive_reward': total_reward,
+            "stats.active_voters": active_voters,
             needs_stat_update: false,
           },
         })
