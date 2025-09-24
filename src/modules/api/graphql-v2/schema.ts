@@ -31,7 +31,7 @@ export const Schema = `
       voter: String
       rshares: Float
       percent: Int
-      weight: Int
+      weight: Float
     }
     
     type PostStats {
